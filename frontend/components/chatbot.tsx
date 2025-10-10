@@ -331,7 +331,7 @@ export const Chatbot = ({
         <ConversationScrollButton />
       </Conversation>
 
-      <Suggestions>
+      {/* <Suggestions>
         {suggestions.map((suggestion) => (
           <Suggestion
             key={suggestion.value}
@@ -341,7 +341,7 @@ export const Chatbot = ({
             suggestion={suggestion.value}
           />
         ))}
-      </Suggestions>
+      </Suggestions> */}
 
       <PromptInput onSubmit={handleSubmit} className="mt-4">
         <PromptInputTextarea

@@ -14,7 +14,7 @@ from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.prompt import AgentPrompts
 from synphora.sse import RunFinishedEvent, RunStartedEvent, SseEvent, TextMessageEvent
-from synphora.tool import ArticleEvaluatorTool
+from synphora.tool import LeetCodeArticleTool
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -66,6 +66,9 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
+tools = LeetCodeArticleTool.get_tools()
+
+
 def start_node(state: AgentState) -> AgentState:
     """开始节点：发送运行开始事件"""
     print('start_node')
@@ -77,9 +80,6 @@ def start_node(state: AgentState) -> AgentState:
 
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
-    # tools = ArticleEvaluatorTool.get_tools()
-    tools = []
-
     print(f'reason_node, tools: {[t.name for t in tools]}')
     llm = create_llm_client()
     llm_with_tools = llm.bind_tools(tools)
@@ -151,7 +151,7 @@ def build_agent_graph() -> StateGraph:
     # 添加节点
     graph.add_node(NodeType.FIRST, start_node)
     graph.add_node(NodeType.REASON, reason_node)
-    graph.add_node(NodeType.ACT, ToolNode(ArticleEvaluatorTool.get_tools()))
+    graph.add_node(NodeType.ACT, ToolNode(tools))
     graph.add_node(NodeType.LAST, end_node)
 
     # 连接节点 - re-act 模式

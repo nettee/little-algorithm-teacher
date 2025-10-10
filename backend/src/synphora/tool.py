@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import Tool, tool
@@ -170,3 +171,48 @@ class ArticleEvaluatorTool:
         result = evaluator.evaluate(original_artifact_id)
         print(f'tool call finished, tool name: write_introduction, result: {result}')
         return result
+
+
+class LeetCodeArticleTool:
+    """LeetCode 文章工具类"""
+
+    @classmethod
+    def get_tools(cls) -> list[Tool]:
+        return [
+            cls.list_articles,
+            cls.read_article,
+        ]
+
+    @staticmethod
+    @tool
+    def list_articles() -> str:
+        """
+        列出所有文章，返回内容为 JSON 格式，包括文章标题、slug、标签、摘要等。
+        """
+        data = [
+            {
+                "slug": "14-dynamic-programming-basics",
+                "title": "14 打家劫舍：动态规划的解题四步骤 ",
+                "tags": ["动态规划"],
+                "summary": "动态规划是一类很讲究「触类旁通」的题型。很多动态规划的解法需要你做过某一类型的例题，再做类似的题目的时候就可以想起来相应的思路。动态规划的典型入门题目是打家劫舍问题，本文以打家劫舍问题为例，讲解动态规划的解题四步骤：定义子问题、写出子问题的递推关系、确定 DP 数组的计算顺序、空间优化。",
+            }
+        ]
+        return json.dumps(data, ensure_ascii=False)
+
+    @staticmethod
+    @tool
+    def read_article(slug: str) -> str:
+        """
+        根据文章slug，读取文章
+        """
+        current_file_path = Path(__file__).parent
+        file_path = (
+            current_file_path / 'data' / 'leetcode-by-example' / slug / f'{slug}.md'
+        )
+        print(f'cwd: {Path.cwd()}')
+        print(f'file_path: {file_path}')
+        if not file_path.exists():
+            return '文章不存在'
+        with open(file_path, encoding='utf-8') as f:
+            content = f.read()
+        return content
