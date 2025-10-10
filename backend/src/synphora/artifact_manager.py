@@ -1,10 +1,8 @@
 import os
-
+from pathlib import Path
 
 from synphora.file_storage import FileStorage
 from synphora.models import ArtifactData, ArtifactRole, ArtifactType
-
-
 
 
 class ArtifactManager:
@@ -27,6 +25,25 @@ class ArtifactManager:
     ) -> ArtifactData:
         """创建新的 artifact"""
         return self._storage.create_artifact(
+            title=title,
+            content=content,
+            artifact_type=artifact_type,
+            role=role,
+            description=description,
+        )
+
+    def create_artifact_from_file(
+        self,
+        path: Path,
+        artifact_type: ArtifactType = ArtifactType.ORIGINAL,
+        role: ArtifactRole = ArtifactRole.USER,
+        description: str | None = None,
+    ) -> ArtifactData:
+        """从文件创建新的 artifact"""
+        # TODO parse title from file
+        title = path.stem
+        content = path.read_text(encoding='utf-8')
+        return self.create_artifact(
             title=title,
             content=content,
             artifact_type=artifact_type,

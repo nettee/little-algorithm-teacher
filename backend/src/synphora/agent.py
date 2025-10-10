@@ -14,7 +14,7 @@ from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.prompt import AgentPrompts
 from synphora.sse import RunFinishedEvent, RunStartedEvent, SseEvent, TextMessageEvent
-from synphora.tool import LeetCodeArticleTool
+from synphora.tool import AlgorithmTeacherTool
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-tools = LeetCodeArticleTool.get_tools()
+tools = AlgorithmTeacherTool.get_tools()
 
 
 def start_node(state: AgentState) -> AgentState:
@@ -90,7 +90,7 @@ def reason_node(state: AgentState) -> AgentState:
     # 用于归并的累加器
     accumulated_chunks = []
 
-    print(f'reason_node, state["messages"]: {state["messages"]}')
+    # print(f'reason_node, state["messages"]: {state["messages"]}')
     for chunk in llm_with_tools.stream(state["messages"]):
         # 累积分片用于最终归并
         accumulated_chunks.append(chunk)

@@ -173,14 +173,15 @@ class ArticleEvaluatorTool:
         return result
 
 
-class LeetCodeArticleTool:
-    """LeetCode 文章工具类"""
+class AlgorithmTeacherTool:
+    """算法辅导员工具类"""
 
     @classmethod
     def get_tools(cls) -> list[Tool]:
         return [
             cls.list_articles,
             cls.read_article,
+            cls.reference_article,
         ]
 
     @staticmethod
@@ -189,6 +190,7 @@ class LeetCodeArticleTool:
         """
         列出所有文章，返回内容为 JSON 格式，包括文章标题、slug、标签、摘要等。
         """
+
         data = [
             {
                 "slug": "14-dynamic-programming-basics",
@@ -205,14 +207,37 @@ class LeetCodeArticleTool:
         """
         根据文章slug，读取文章
         """
-        current_file_path = Path(__file__).parent
-        file_path = (
-            current_file_path / 'data' / 'leetcode-by-example' / slug / f'{slug}.md'
-        )
-        print(f'cwd: {Path.cwd()}')
-        print(f'file_path: {file_path}')
+
+        file_path = AlgorithmTeacherTool._get_article_path(slug)
         if not file_path.exists():
             return '文章不存在'
         with open(file_path, encoding='utf-8') as f:
             content = f.read()
         return content
+
+    @staticmethod
+    @tool
+    def reference_article(slug: str):
+        """
+        在回答中引用某篇文章
+        """
+        print(f'reference_article, slug: {slug}')
+        artifact = artifact_manager.create_artifact_from_file(
+            path=AlgorithmTeacherTool._get_article_path(slug),
+            artifact_type=ArtifactType.ORIGINAL,
+            role=ArtifactRole.ASSISTANT,
+        )
+        write_sse_event(
+            ArtifactListUpdatedEvent.new(
+                artifact_id=artifact.id,
+                title=artifact.title,
+                artifact_type=artifact.type.value,
+                role=artifact.role.value,
+            )
+        )
+
+    @staticmethod
+    def _get_article_path(slug: str) -> Path:
+        return (
+            Path(__file__).parent / 'data' / 'leetcode-by-example' / slug / f'{slug}.md'
+        )
