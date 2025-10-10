@@ -19,7 +19,7 @@ const useArtifacts = (
   initialArtifactId: string
 ) => {
   const [artifactStatus, setArtifactStatus] =
-    useState<ArtifactStatus>(initialStatus);
+    useState<ArtifactStatus>(artifacts.length > 0 ? initialStatus : ArtifactStatus.COLLAPSED);
   const [currentArtifactId, setCurrentArtifactId] =
     useState<string>(initialArtifactId);
 
@@ -52,7 +52,7 @@ const initialMessages: ChatMessage[] = [
     parts: [
       {
         type: "text",
-        text: "你好，我是 Synphora，你的写作助手。请提出你对于文章分析和润色的需求。",
+        text: "你好，我是你的算法题辅导员。请输入你想学习的算法题，我会根据《LeetCode 例题精讲》的思路为你讲解。",
       },
     ],
   },
@@ -101,17 +101,6 @@ const SynphoraPage = ({
         <div className="text-center">
           <h2 className="text-xl mb-2">加载失败</h2>
           <p>无法连接到后端服务，请检查后端是否正常运行。</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (artifactsData.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        <div className="text-center">
-          <h2 className="text-xl mb-2">No artifacts available</h2>
-          <p>Please upload some files to get started.</p>
         </div>
       </div>
     );
@@ -186,28 +175,30 @@ const SynphoraPage = ({
             onArtifactListUpdated={onArtifactListUpdated}
           />
         </div>
-        <div
-          data-role="artifact-container"
-          className={`h-full transition-all duration-300 ${
-            artifactStatus === ArtifactStatus.COLLAPSED ? "w-96" : "w-2/3"
-          }`}
-        >
-          {artifactStatus === ArtifactStatus.COLLAPSED ? (
-            <ArtifactList artifacts={artifacts} onOpenArtifact={openArtifact} />
-          ) : currentArtifact ? (
-            <ArtifactDetail
-              artifact={currentArtifact}
-              onCloseArtifact={closeArtifact}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              <div className="text-center">
-                <h3 className="text-lg mb-2">No artifact selected</h3>
-                <p>Please select an artifact from the list.</p>
+        {artifacts.length > 0 && (
+          <div
+            data-role="artifact-container"
+            className={`h-full transition-all duration-300 ${
+              artifactStatus === ArtifactStatus.COLLAPSED ? "w-96" : "w-2/3"
+            }`}
+          >
+            {artifactStatus === ArtifactStatus.COLLAPSED ? (
+              <ArtifactList artifacts={artifacts} onOpenArtifact={openArtifact} />
+            ) : currentArtifact ? (
+              <ArtifactDetail
+                artifact={currentArtifact}
+                onCloseArtifact={closeArtifact}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="text-center">
+                  <h3 className="text-lg mb-2">No artifact selected</h3>
+                  <p>Please select an artifact from the list.</p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
