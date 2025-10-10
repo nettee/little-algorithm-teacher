@@ -10,7 +10,6 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
-from synphora.artifact_manager import artifact_manager
 from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.prompt import AgentPrompts
@@ -69,7 +68,7 @@ class AgentState(TypedDict):
 
 def start_node(state: AgentState) -> AgentState:
     """开始节点：发送运行开始事件"""
-    print(f'start_node, state: {state}')
+    print('start_node')
 
     write_sse_event(RunStartedEvent.new())
 
@@ -78,9 +77,10 @@ def start_node(state: AgentState) -> AgentState:
 
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
-    print(f'reason_node, state: {state}')
+    # tools = ArticleEvaluatorTool.get_tools()
+    tools = []
 
-    tools = ArticleEvaluatorTool.get_tools()
+    print(f'reason_node, tools: {[t.name for t in tools]}')
     llm = create_llm_client()
     llm_with_tools = llm.bind_tools(tools)
 
@@ -90,6 +90,7 @@ def reason_node(state: AgentState) -> AgentState:
     # 用于归并的累加器
     accumulated_chunks = []
 
+    print(f'reason_node, state["messages"]: {state["messages"]}')
     for chunk in llm_with_tools.stream(state["messages"]):
         # 累积分片用于最终归并
         accumulated_chunks.append(chunk)
@@ -112,9 +113,11 @@ def should_continue(state: AgentState) -> NodeType:
 
     # 如果最后一条消息包含工具调用，则继续到act节点
     if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+        print(f'tool calls: {last_message.tool_calls}')
         return NodeType.ACT
     # 否则结束
     else:
+        print('no tool calls, go to last node')
         return NodeType.LAST
 
 
@@ -134,7 +137,7 @@ def merge_chunks(accumulated_chunks):
 
 def end_node(state: AgentState) -> AgentState:
     """结束节点：发送运行完成事件"""
-    print(f'end_node, state: {state}')
+    print('end_node')
 
     write_sse_event(RunFinishedEvent.new())
 
@@ -179,18 +182,15 @@ async def generate_agent_response(
     主要的Agent响应函数，使用LangGraph流式处理
     """
 
+    print(f'generate_agent_response, request: {request}')
+
     graph = build_agent_graph()
 
     # 创建初始消息
-    original_artifact = artifact_manager.get_original_artifact()
     agent_prompts = AgentPrompts()
     initial_messages = [
         SystemMessage(content=agent_prompts.system()),
-        HumanMessage(
-            content=agent_prompts.user(
-                original_artifact_id=original_artifact.id, user_message=request.message
-            )
-        ),
+        HumanMessage(content=agent_prompts.user(user_message=request.message)),
     ]
 
     # 创建初始状态

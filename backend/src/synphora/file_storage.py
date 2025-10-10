@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 import tempfile
 import uuid
@@ -7,9 +6,11 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 from synphora.models import ArtifactData, ArtifactRole, ArtifactType
 
 load_dotenv()
+
 
 class FileStorage:
     def __init__(self, storage_path: str = "tests/data/store"):
@@ -26,10 +27,10 @@ class FileStorage:
         temp_dir = Path(tempfile.mkdtemp(prefix="synphora_storage_"))
 
         # 如果原始目录存在，且 NEXT_PUBLIC_SKIP_WELCOME 为 true，复制其内容
-        skip_welcome = os.getenv('NEXT_PUBLIC_SKIP_WELCOME') == 'true'
-        print(f"📁 skip_welcome: {skip_welcome}")
-        if skip_welcome and self.original_storage_path.exists():
-            shutil.copytree(self.original_storage_path, temp_dir, dirs_exist_ok=True)
+        # skip_welcome = os.getenv('NEXT_PUBLIC_SKIP_WELCOME') == 'true'
+        # print(f"📁 skip_welcome: {skip_welcome}")
+        # if skip_welcome and self.original_storage_path.exists():
+        #     shutil.copytree(self.original_storage_path, temp_dir, dirs_exist_ok=True)
 
         print(f"📁 Created temporary storage copy at: {temp_dir}")
         return temp_dir
