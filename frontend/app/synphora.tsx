@@ -154,8 +154,8 @@ const SynphoraPage = ({
   };
 
   return (
-    <div className="w-full h-screen mx-auto p-6">
-      <div className="w-full h-full flex gap-4">
+    <div className="w-full h-screen mx-auto flex flex-col">
+      <div className="w-full flex-1 flex gap-4 p-6 min-h-0">
         {/* 
           根据 artifactStatus 灵活布局
           当 artifact 部分收起时，artifact 部分固定占据 w-96 宽度，chatbot 部分占据剩余宽度
@@ -163,7 +163,7 @@ const SynphoraPage = ({
         */}
         <div
           data-role="chatbot-container"
-          className={`flex flex-col h-full ${
+          className={`flex flex-col min-h-0 ${
             artifactStatus === ArtifactStatus.COLLAPSED ? "flex-1" : "w-1/3"
           }`}
         >
@@ -178,7 +178,7 @@ const SynphoraPage = ({
         {artifacts.length > 0 && (
           <div
             data-role="artifact-container"
-            className={`h-full transition-all duration-300 ${
+            className={`min-h-0 transition-all duration-300 ${
               artifactStatus === ArtifactStatus.COLLAPSED ? "w-96" : "w-2/3"
             }`}
           >

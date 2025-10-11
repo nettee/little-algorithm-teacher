@@ -118,6 +118,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden; /* 防止页面整体出现滚动条 */
   }
   
   /* 因为 Tailwind CSS 重置了所有的样式，所以 Streamdown 的样式需要在这里定义 */
