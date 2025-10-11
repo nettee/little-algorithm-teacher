@@ -10,10 +10,19 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
+from synphora.artifact_manager import artifact_manager
 from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
+from synphora.models import ArtifactRole, ArtifactType
 from synphora.prompt import AgentPrompts
-from synphora.sse import RunFinishedEvent, RunStartedEvent, SseEvent, TextMessageEvent
+from synphora.reference import parse_reference
+from synphora.sse import (
+    ArtifactListUpdatedEvent,
+    RunFinishedEvent,
+    RunStartedEvent,
+    SseEvent,
+    TextMessageEvent,
+)
 from synphora.tool import AlgorithmTeacherTool
 
 # 设置日志
@@ -102,6 +111,31 @@ def reason_node(state: AgentState) -> AgentState:
             )
 
     ai_message = merge_chunks(accumulated_chunks)
+
+    references = parse_reference(ai_message.content)
+    if references:
+        reference = references[0]
+        print(f'reference_article, reference: {reference}')
+
+        artifact_id = reference.artifactId
+        slug = reference.artifactId  # TODO get slug
+        title = reference.title
+
+        artifact = artifact_manager.create_artifact_from_file(
+            artifact_id=artifact_id,
+            title=title,
+            path=AlgorithmTeacherTool._get_article_path(slug),
+            artifact_type=ArtifactType.ORIGINAL,
+            role=ArtifactRole.ASSISTANT,
+        )
+        write_sse_event(
+            ArtifactListUpdatedEvent.new(
+                artifact_id=artifact.id,
+                title=artifact.title,
+                artifact_type=artifact.type.value,
+                role=artifact.role.value,
+            )
+        )
 
     return {"messages": [ai_message]}
 

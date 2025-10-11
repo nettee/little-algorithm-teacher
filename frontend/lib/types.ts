@@ -1,8 +1,16 @@
 // 定义消息类型
 export interface MessagePart {
-  type: 'text' | 'reasoning' | 'source-url';
+  type: 'text' | 'reasoning' | 'source-url' | 'reference';
   text: string;
   url?: string;
+  references?: Reference[];
+}
+
+// 引用类型定义 - 引用的是 artifact 列表中的项目
+export interface Reference {
+  artifactId: string;
+  title: string;
+  description?: string;
 }
 
 export enum MessageRole {

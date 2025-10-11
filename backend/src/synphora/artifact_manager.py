@@ -34,6 +34,8 @@ class ArtifactManager:
 
     def create_artifact_from_file(
         self,
+        artifact_id: str,
+        title: str,
         path: Path,
         artifact_type: ArtifactType = ArtifactType.ORIGINAL,
         role: ArtifactRole = ArtifactRole.USER,
@@ -41,9 +43,9 @@ class ArtifactManager:
     ) -> ArtifactData:
         """从文件创建新的 artifact"""
         # TODO parse title from file
-        title = path.stem
         content = path.read_text(encoding='utf-8')
-        return self.create_artifact(
+        return self.create_artifact_with_id(
+            artifact_id=artifact_id,
             title=title,
             content=content,
             artifact_type=artifact_type,

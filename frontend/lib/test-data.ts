@@ -14,12 +14,41 @@ export const testMessages: ChatMessage[] = [
   {
     id: '3',
     role: MessageRole.USER,
-    parts: [{ type: 'text', text: '你叫什么名字？' }],
+    parts: [{ type: 'text', text: '请介绍一下动态规划的基本概念' }],
   },
   {
     id: '4',
     role: MessageRole.ASSISTANT,
-    parts: [{ type: 'text', text: '我叫小助手。' }],
+    parts: [
+      { 
+        type: 'text', 
+        text: '动态规划是一种算法设计技术，通过将复杂问题分解为更简单的子问题来求解。它的核心思想是避免重复计算，通过存储已经计算过的结果来提高效率。\n\n动态规划通常适用于具有以下特征的问题：\n1. 最优子结构：问题的最优解包含子问题的最优解\n2. 重叠子问题：递归算法会反复求解相同的子问题\n\n以下是一些相关的学习资源：' 
+      },
+      {
+        type: 'reference',
+        text: '',
+        references: [
+          {
+            title: '动态规划基础教程',
+            artifactId: '1',
+            description: '这是一篇关于动态规划基础概念和应用的详细教程，包含了多个经典例题的解析。',
+            type: ArtifactType.ORIGINAL
+          },
+          {
+            title: 'LeetCode 动态规划题目集合',
+            artifactId: '2',
+            description: '收集了 LeetCode 上最经典的动态规划题目，从简单到困难，适合不同水平的学习者。',
+            type: ArtifactType.COMMENT
+          },
+          {
+            title: '算法导论 - 动态规划章节',
+            artifactId: '3',
+            description: '经典算法教材中关于动态规划的理论基础和数学证明。',
+            type: ArtifactType.ORIGINAL
+          }
+        ]
+      }
+    ],
   },
 ];
 

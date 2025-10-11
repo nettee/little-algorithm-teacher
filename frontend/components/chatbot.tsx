@@ -28,13 +28,15 @@ import {
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { ReferenceCards } from "@/components/ai-elements/reference-card";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
-import { ChatMessage, ChatStatus, MessageRole } from "@/lib/types";
+import { ChatMessage, ChatStatus, MessageRole, MessagePart } from "@/lib/types";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Actions, Action } from "@/components/ai-elements/actions";
 import { Loader } from "@/components/ai-elements/loader";
+import { parseReferences } from "@/lib/reference-parser";
 
 const models = [
   {
@@ -57,12 +59,14 @@ export const Chatbot = ({
   onArtifactContentChunk,
   onArtifactContentComplete,
   onArtifactListUpdated,
+  onArtifactNavigate,
 }: {
   initialMessages: ChatMessage[];
   onArtifactContentStart: (artifactId: string, title: string, description?: string) => void;
   onArtifactContentChunk: (artifactId: string, chunk: string) => void;
   onArtifactContentComplete: (artifactId: string) => void;
   onArtifactListUpdated: () => void;
+  onArtifactNavigate?: (artifactId: string) => void;
 }) => {
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>(models[0].value);
@@ -142,10 +146,23 @@ export const Chatbot = ({
                     currentMessageId = message_id;
                     currentContent = content;
 
+                    // 解析 reference 标记
+                    const { cleanText, references } = parseReferences(content);
+                    const messageParts: MessagePart[] = [{ type: "text", text: cleanText }];
+                    
+                    // 如果有引用，添加 reference part
+                    if (references.length > 0) {
+                      messageParts.push({
+                        type: "reference",
+                        text: "",
+                        references: references,
+                      });
+                    }
+
                     const assistantMessage: ChatMessage = {
                       id: message_id,
                       role: MessageRole.ASSISTANT,
-                      parts: [{ type: "text", text: content }],
+                      parts: messageParts,
                     };
 
                     setMessages((prev) => [...prev, assistantMessage]);
@@ -153,16 +170,29 @@ export const Chatbot = ({
                     // 继续当前消息
                     currentContent += content;
 
+                    // 重新解析整个内容的 reference 标记
+                    const { cleanText, references } = parseReferences(currentContent);
+
                     setMessages((prev) =>
                       prev.map((msg) =>
                         msg.id === message_id
                           ? {
                               ...msg,
-                              parts: msg.parts.map((part) =>
-                                part.type === "text"
-                                  ? { ...part, text: currentContent }
-                                  : part
-                              ),
+                              parts: (() => {
+                                const textPart: MessagePart = { type: "text", text: cleanText };
+                                const parts: MessagePart[] = [textPart];
+                                
+                                // 如果有引用，添加 reference part
+                                if (references.length > 0) {
+                                  parts.push({
+                                    type: "reference",
+                                    text: "",
+                                    references: references,
+                                  });
+                                }
+                                
+                                return parts;
+                              })(),
                             }
                           : msg
                       )
@@ -276,13 +306,30 @@ export const Chatbot = ({
               {message.parts.map((part, i) => {
                 switch (part.type) {
                   case "text":
+                    // 检查文本是否包含 reference 标记
+                    const { cleanText, references } = parseReferences(part.text);
+                    const hasRefs = references.length > 0;
+                    
                     return (
                       <Fragment key={`${message.id}-${i}`}>
                         <Message from={message.role}>
                           <MessageContent>
-                            <Response>{part.text}</Response>
+                            <Response>{cleanText}</Response>
                           </MessageContent>
                         </Message>
+                        {/* 如果文本中有 reference 标记，渲染 reference cards */}
+                        {hasRefs && (
+                          <div className="mt-4">
+                            <ReferenceCards
+                              references={references}
+                              onReferenceClick={(reference) => {
+                                if (onArtifactNavigate) {
+                                  onArtifactNavigate(reference.artifactId);
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
                         {message.role === MessageRole.ASSISTANT &&
                           i === message.parts.length - 1 &&
                           message.id === messages.at(-1)?.id && (
@@ -319,6 +366,19 @@ export const Chatbot = ({
                         <ReasoningTrigger />
                         <ReasoningContent>{part.text}</ReasoningContent>
                       </Reasoning>
+                    );
+                  case "reference":
+                    return (
+                      <div key={`${message.id}-${i}`} className="mt-4">
+                        <ReferenceCards
+                          references={part.references || []}
+                          onReferenceClick={(reference) => {
+                            if (onArtifactNavigate) {
+                              onArtifactNavigate(reference.artifactId);
+                            }
+                          }}
+                        />
+                      </div>
                     );
                   default:
                     return null;

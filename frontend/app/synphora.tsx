@@ -58,18 +58,43 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+const testInitialMessages: ChatMessage[] = [
+  {
+    id: "2",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "text",
+        text: "你好，我是你的算法题辅导员。请输入你想学习的算法题，我会根据《LeetCode 例题精讲》的思路为你讲解。",
+      },
+    ],
+  },
+  {
+    id: "4",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "text",
+        text: "这里有一个关于动态规划的例子，你可以参考这个文档来学习基础知识。<reference><artifactId>14-dynamic-programming-basics</artifactId><title>动态规划基础</title></reference>",
+      },
+    ],
+  },
+];
+
+
 const SynphoraPage = ({
   initialArtifactStatus = ArtifactStatus.EXPANDED,
 }: {
   initialArtifactStatus?: ArtifactStatus;
 } = {}) => {
+  const synphoraPageTest = process.env.NEXT_PUBLIC_SYNPHORA_PAGE_TEST === "true";
+
   const {
     data: artifactsData = [],
     error,
     isLoading,
     mutate,
   } = useSWR("/artifacts", fetchArtifacts);
-
 
   const {
     artifacts,
@@ -168,11 +193,12 @@ const SynphoraPage = ({
           }`}
         >
           <Chatbot
-            initialMessages={initialMessages}
+            initialMessages={synphoraPageTest ? testInitialMessages : initialMessages}
             onArtifactContentStart={onArtifactContentStart}
             onArtifactContentChunk={onArtifactContentChunk}
             onArtifactContentComplete={onArtifactContentComplete}
             onArtifactListUpdated={onArtifactListUpdated}
+            onArtifactNavigate={openArtifact}
           />
         </div>
         {artifacts.length > 0 && (

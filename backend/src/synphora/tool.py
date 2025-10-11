@@ -181,7 +181,7 @@ class AlgorithmTeacherTool:
         return [
             cls.list_articles,
             cls.read_article,
-            cls.reference_article,
+            # cls.reference_article,
         ]
 
     @staticmethod
@@ -193,8 +193,9 @@ class AlgorithmTeacherTool:
 
         data = [
             {
+                "artifact_id": "14-dynamic-programming-basics",
                 "slug": "14-dynamic-programming-basics",
-                "title": "14 打家劫舍：动态规划的解题四步骤 ",
+                "title": "14 打家劫舍：动态规划的解题四步骤",
                 "tags": ["动态规划"],
                 "summary": "动态规划是一类很讲究「触类旁通」的题型。很多动态规划的解法需要你做过某一类型的例题，再做类似的题目的时候就可以想起来相应的思路。动态规划的典型入门题目是打家劫舍问题，本文以打家劫舍问题为例，讲解动态规划的解题四步骤：定义子问题、写出子问题的递推关系、确定 DP 数组的计算顺序、空间优化。",
             }
@@ -217,12 +218,13 @@ class AlgorithmTeacherTool:
 
     @staticmethod
     @tool
-    def reference_article(slug: str):
+    def reference_article(artifact_id: str, slug: str):
         """
         在回答中引用某篇文章
         """
         print(f'reference_article, slug: {slug}')
         artifact = artifact_manager.create_artifact_from_file(
+            artifact_id=artifact_id,
             path=AlgorithmTeacherTool._get_article_path(slug),
             artifact_type=ArtifactType.ORIGINAL,
             role=ArtifactRole.ASSISTANT,
