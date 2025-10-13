@@ -113,6 +113,12 @@ def reason_node(state: AgentState) -> AgentState:
 
     ai_message = merge_chunks(accumulated_chunks)
 
+    # print content between `<references>` label
+    if "<references>" in ai_message.content and "</references>" in ai_message.content:
+        print(
+            f'references content: {ai_message.content.split("<references>")[1].split("</references>")[0]}'
+        )
+
     references = parse_reference(ai_message.content)
     if references:
         print(f'reference_article, references: {references}')

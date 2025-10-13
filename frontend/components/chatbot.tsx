@@ -1,8 +1,11 @@
+import { Action, Actions } from "@/components/ai-elements/actions";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
+import { Loader } from "@/components/ai-elements/loader";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputModelSelect,
@@ -20,6 +23,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
+import { ReferenceCards } from "@/components/ai-elements/reference-card";
 import { Response } from "@/components/ai-elements/response";
 import {
   Source,
@@ -27,16 +31,11 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import { ReferenceCards } from "@/components/ai-elements/reference-card";
+import { cleanReferences, parseReferences } from "@/lib/reference-parser";
+import { ChatMessage, ChatStatus, MessagePart, MessageRole } from "@/lib/types";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
-import { ChatMessage, ChatStatus, MessageRole, MessagePart } from "@/lib/types";
-import { Message, MessageContent } from "@/components/ai-elements/message";
-import { Actions, Action } from "@/components/ai-elements/actions";
-import { Loader } from "@/components/ai-elements/loader";
-import { parseReferences } from "@/lib/reference-parser";
 
 const models = [
   {
@@ -49,9 +48,7 @@ const models = [
   },
 ];
 
-const suggestions = process.env.NEXT_PUBLIC_CHAT_SUGGESTIONS?.split(',').map(suggestion => ({
-  value: suggestion.trim()
-})) || [];
+const showDebugInfo: boolean = process.env.NEXT_PUBLIC_SHOW_DEBUG_INFO === "true";
 
 export const Chatbot = ({
   initialMessages = [],
@@ -146,23 +143,10 @@ export const Chatbot = ({
                     currentMessageId = message_id;
                     currentContent = content;
 
-                    // 解析 reference 标记
-                    const { cleanText, references } = parseReferences(content);
-                    const messageParts: MessagePart[] = [{ type: "text", text: cleanText }];
-                    
-                    // 如果有引用，添加 reference part
-                    if (references.length > 0) {
-                      messageParts.push({
-                        type: "reference",
-                        text: "",
-                        references: references,
-                      });
-                    }
-
                     const assistantMessage: ChatMessage = {
                       id: message_id,
                       role: MessageRole.ASSISTANT,
-                      parts: messageParts,
+                      parts: [{ type: "text", text: content }],
                     };
 
                     setMessages((prev) => [...prev, assistantMessage]);
@@ -170,29 +154,12 @@ export const Chatbot = ({
                     // 继续当前消息
                     currentContent += content;
 
-                    // 重新解析整个内容的 reference 标记
-                    const { cleanText, references } = parseReferences(currentContent);
-
                     setMessages((prev) =>
                       prev.map((msg) =>
                         msg.id === message_id
                           ? {
                               ...msg,
-                              parts: (() => {
-                                const textPart: MessagePart = { type: "text", text: cleanText };
-                                const parts: MessagePart[] = [textPart];
-                                
-                                // 如果有引用，添加 reference part
-                                if (references.length > 0) {
-                                  parts.push({
-                                    type: "reference",
-                                    text: "",
-                                    references: references,
-                                  });
-                                }
-                                
-                                return parts;
-                              })(),
+                              parts: [{ type: "text", text: currentContent }],
                             }
                           : msg
                       )
@@ -307,14 +274,14 @@ export const Chatbot = ({
                 switch (part.type) {
                   case "text":
                     // 检查文本是否包含 reference 标记
-                    const { cleanText, references } = parseReferences(part.text);
+                    const { references } = parseReferences(part.text);
                     const hasRefs = references.length > 0;
                     
                     return (
                       <Fragment key={`${message.id}-${i}`}>
                         <Message from={message.role}>
                           <MessageContent>
-                            <Response>{cleanText}</Response>
+                            <Response>{showDebugInfo ? part.text : cleanReferences(part.text)}</Response>
                           </MessageContent>
                         </Message>
                         {/* 如果文本中有 reference 标记，渲染 reference cards */}
@@ -366,19 +333,6 @@ export const Chatbot = ({
                         <ReasoningTrigger />
                         <ReasoningContent>{part.text}</ReasoningContent>
                       </Reasoning>
-                    );
-                  case "reference":
-                    return (
-                      <div key={`${message.id}-${i}`} className="mt-4">
-                        <ReferenceCards
-                          references={part.references || []}
-                          onReferenceClick={(reference) => {
-                            if (onArtifactNavigate) {
-                              onArtifactNavigate(reference.artifactId);
-                            }
-                          }}
-                        />
-                      </div>
                     );
                   default:
                     return null;

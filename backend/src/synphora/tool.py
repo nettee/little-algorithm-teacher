@@ -195,7 +195,7 @@ class AlgorithmTeacherTool:
         courses = AlgorithmTeacherTool.COURSE_MANAGER.list_courses()
         data = [course.to_data() for course in courses]
         result = json.dumps(data, ensure_ascii=False)
-        print(f'list_articles, result: {result}')
+        # print(f'list_articles, result: {result}')
         return result
 
     @staticmethod
@@ -206,5 +206,5 @@ class AlgorithmTeacherTool:
         """
 
         content = AlgorithmTeacherTool.COURSE_MANAGER.read_course_content(artifact_id)
-        print(f'read_article, artifact_id: {artifact_id}, content: {content[:100]}')
+        # print(f'read_article, artifact_id: {artifact_id}, content: {content[:100]}')
         return content

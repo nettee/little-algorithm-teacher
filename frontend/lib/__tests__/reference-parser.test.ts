@@ -1,4 +1,4 @@
-import { parseReferences } from "../reference-parser";
+import { parseReferences, cleanReferences } from "../reference-parser";
 
 describe("reference-parser", () => {
   it("应该正确解析单个引用", () => {
@@ -9,7 +9,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("这是一段文本  后面还有文本。");
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
       artifactId: "abc123",
@@ -28,7 +27,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("第一个引用  中间文本  结束文本。");
     expect(result.references).toHaveLength(2);
     expect(result.references[0]).toEqual({
       artifactId: "ref1",
@@ -46,7 +44,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("文本  更多文本。");
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
       artifactId: "compact",
@@ -62,7 +59,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("");
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
       artifactId: "special-id_123",
@@ -79,10 +75,6 @@ describe("reference-parser", () => {
     const result = parseReferences(text);
 
     // 由于正则表达式使用 [^<]+ 匹配非空内容，空的 artifactId 和 title 不会被匹配
-    expect(result.cleanText).toBe(`<reference>
-    <artifactId></artifactId>
-    <title></title>
-</reference>`);
     expect(result.references).toHaveLength(0);
   });
 
@@ -91,14 +83,12 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("这是一段普通的文本，没有任何引用标记。");
     expect(result.references).toHaveLength(0);
   });
 
   it("应该处理空字符串", () => {
     const result = parseReferences("");
 
-    expect(result.cleanText).toBe("");
     expect(result.references).toHaveLength(0);
   });
 
@@ -108,9 +98,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe(
-      "文本 <reference><artifactId>incomplete</artifactId> 缺少title标记"
-    );
     expect(result.references).toHaveLength(0);
   });
 
@@ -121,9 +108,6 @@ describe("reference-parser", () => {
     const result = parseReferences(text);
 
     // 由于正则表达式使用 [^<]+ 来匹配内容，嵌套标记不应该被匹配
-    expect(result.cleanText).toBe(
-      "<reference><artifactId><nested>test</nested></artifactId><title>标题</title></reference>"
-    );
     expect(result.references).toHaveLength(0);
   });
 
@@ -152,7 +136,6 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0].artifactId).toBe("long-test");
-    expect(result.cleanText).toBe(`${longText}  ${longText}`);
   });
 
   it("应该处理包含换行符的内容", () => {
@@ -166,9 +149,6 @@ describe("reference-parser", () => {
     const result = parseReferences(text);
 
     expect(result.references).toHaveLength(1);
-    expect(result.cleanText).toBe(`多行文本
-第二行 
-第三行`);
   });
 
   it("应该处理Unicode字符", () => {
@@ -194,7 +174,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("这是一段文本  后面还有文本。");
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
       artifactId: "id-after-title",
@@ -213,7 +192,6 @@ describe("reference-parser", () => {
 
     const result = parseReferences(text);
 
-    expect(result.cleanText).toBe("第一个引用  第二个引用  结束文本。");
     expect(result.references).toHaveLength(2);
     expect(result.references[0]).toEqual({
       artifactId: "ref1",
@@ -222,6 +200,38 @@ describe("reference-parser", () => {
     expect(result.references[1]).toEqual({
       artifactId: "ref2",
       title: "标题2",
+    });
+  });
+
+  describe("cleanReferences", () => {
+    it("应该清理完整的 <references></references> 标记及其内容", () => {
+      const text = `这是前面的文本。<references>
+      <reference>
+        <artifactId>ref1</artifactId>
+        <title>标题1</title>
+      </reference>
+      <reference>
+        <artifactId>ref2</artifactId>
+        <title>标题2</title>
+      </reference>
+      </references>这是后面的文本。`;
+
+      const result = cleanReferences(text);
+
+      expect(result).toBe("这是前面的文本。这是后面的文本。");
+    });
+
+    it("应该清理未闭合的 <references> 标记及其后的所有内容", () => {
+      const text = `这是前面的文本。<references>
+      <reference>
+        <artifactId>ref1</artifactId>
+        <title>标题1</title>
+      </reference>
+      这里还有一些内容但没有闭合标记`;
+
+      const result = cleanReferences(text);
+
+      expect(result).toBe("这是前面的文本。");
     });
   });
 });

@@ -1,24 +1,41 @@
 import { Reference } from './types';
 
 /**
+ * 清理文本中的 <references> 标记。
+ * 如果只遇到了打开标记 <references>，没有对应的关闭标记 </references>，则清理打开标记以后的所有内容。
+ * @param text 包含 <references> 标记的文本
+ * @returns 清理后的文本
+ */
+export function cleanReferences(text: string): string {
+  // 清理 <references> 标记中的内容
+  if (text.includes('<references>') && text.includes('</references>')) {
+    text = text.replace(/<references>([\s\S]*?)<\/references>/g, '');
+  }
+
+  // 如果只遇到了打开标记 <references>，没有对应的关闭标记 </references>，则清理打开标记以后的所有内容。
+  if (text.includes('<references>') && !text.includes('</references>')) {
+    text = text.replace(/<references>[\s\S]*$/g, '');
+  }
+
+  return text;
+}
+
+/**
  * 解析文本中的 <reference> 标记
  * @param text 包含 reference 标记的文本
- * @returns 解析结果，包含清理后的文本和提取的引用
+ * @returns 解析结果，只包含提取的引用
  */
 export function parseReferences(text: string): {
-  cleanText: string;
   references: Reference[];
 } {
   const references: Reference[] = [];
   
   // 先匹配外层 <reference> 标签，获取内容
   const referenceRegex = /<reference>([\s\S]*?)<\/reference>/g;
-  const validReferences: string[] = []; // 只保存有效的 reference 标签用于清理
   
   let match;
   while ((match = referenceRegex.exec(text)) !== null) {
     const referenceContent = match[1];
-    const fullMatch = match[0];
     
     // 在 reference 内容中查找 artifactId 和 title，不要求特定顺序
     // 使用更严格的正则表达式，不允许嵌套标签
@@ -38,22 +55,11 @@ export function parseReferences(text: string): {
         };
         
         references.push(reference);
-        validReferences.push(fullMatch); // 只有有效的引用才会被清理
       }
     }
   }
   
-  // 移除文本中的有效 reference 标记，得到清理后的文本
-  let cleanText = text;
-  validReferences.forEach(refTag => {
-    cleanText = cleanText.replace(refTag, '');
-  });
-  
-  // 只清理首尾空白字符，保持原有的内部空白结构
-  cleanText = cleanText.trim();
-  
   return {
-    cleanText,
     references,
   };
 }
