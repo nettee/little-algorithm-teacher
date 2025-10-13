@@ -16,7 +16,7 @@ from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType
 from synphora.prompt import AgentPrompts
-from synphora.reference import parse_reference
+from synphora.reference import parse_references
 from synphora.sse import (
     ArtifactListUpdatedEvent,
     RunFinishedEvent,
@@ -113,13 +113,7 @@ def reason_node(state: AgentState) -> AgentState:
 
     ai_message = merge_chunks(accumulated_chunks)
 
-    # print content between `<references>` label
-    if "<references>" in ai_message.content and "</references>" in ai_message.content:
-        print(
-            f'references content: {ai_message.content.split("<references>")[1].split("</references>")[0]}'
-        )
-
-    references = parse_reference(ai_message.content)
+    references = parse_references(ai_message.content)
     if references:
         print(f'reference_article, references: {references}')
         for reference in references:
