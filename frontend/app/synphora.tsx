@@ -9,17 +9,18 @@ import { ArtifactData, ChatMessage, MessageRole, ArtifactType } from "@/lib/type
 import { fetchArtifacts } from "@/lib/api";
 
 enum ArtifactStatus {
+  HIDDEN = "hidden",
   COLLAPSED = "collapsed",
   EXPANDED = "expanded",
 }
 
 const useArtifacts = (
-  initialStatus: ArtifactStatus = ArtifactStatus.COLLAPSED,
+  initialStatus: ArtifactStatus = ArtifactStatus.HIDDEN,
   artifacts: ArtifactData[],
   initialArtifactId: string
 ) => {
   const [artifactStatus, setArtifactStatus] =
-    useState<ArtifactStatus>(artifacts.length > 0 ? initialStatus : ArtifactStatus.COLLAPSED);
+    useState<ArtifactStatus>(artifacts.length > 0 ? initialStatus : ArtifactStatus.HIDDEN);
   const [currentArtifactId, setCurrentArtifactId] =
     useState<string>(initialArtifactId);
 
@@ -35,12 +36,17 @@ const useArtifacts = (
     setArtifactStatus(ArtifactStatus.EXPANDED);
   };
 
+  const hideArtifact = () => {
+    setArtifactStatus(ArtifactStatus.HIDDEN);
+  };
+
   return {
     artifacts,
     artifactStatus,
     currentArtifact,
     collapseArtifact,
     expandArtifact,
+    hideArtifact,
     setCurrentArtifactId,
   };
 };
@@ -91,7 +97,7 @@ const testInitialMessages: ChatMessage[] = [
 
 
 const SynphoraPage = ({
-  initialArtifactStatus = ArtifactStatus.EXPANDED,
+  initialArtifactStatus = ArtifactStatus.HIDDEN,
 }: {
   initialArtifactStatus?: ArtifactStatus;
 } = {}) => {
@@ -110,6 +116,7 @@ const SynphoraPage = ({
     currentArtifact,
     collapseArtifact,
     expandArtifact,
+    hideArtifact,
     setCurrentArtifactId,
   } = useArtifacts(
     initialArtifactStatus,
@@ -144,7 +151,7 @@ const SynphoraPage = ({
     setCurrentArtifactId(artifactId);
   };
 
-  const closeArtifact = () => {
+  const closeArtifactToCollapsed = () => {
     collapseArtifact();
   };
 
@@ -191,13 +198,14 @@ const SynphoraPage = ({
       <div className="w-full flex-1 flex gap-4 p-6 min-h-0">
         {/* 
           根据 artifactStatus 灵活布局
+          当 artifact 部分隐藏时，chatbot 部分占据全部宽度
           当 artifact 部分收起时，artifact 部分固定占据 w-96 宽度，chatbot 部分占据剩余宽度
           当 artifact 部分展开时，artifact 部分占据 2/3 宽度，chatbot 部分占据 1/3 宽度
         */}
         <div
           data-role="chatbot-container"
           className={`flex flex-col min-h-0 ${
-            artifactStatus === ArtifactStatus.COLLAPSED ? "flex-1" : "w-1/3"
+            artifactStatus === ArtifactStatus.EXPANDED ? "w-1/3" : "flex-1" 
           }`}
         >
           <Chatbot
@@ -209,7 +217,7 @@ const SynphoraPage = ({
             onArtifactNavigate={openArtifact}
           />
         </div>
-        {artifacts.length > 0 && (
+        {artifactStatus !== ArtifactStatus.HIDDEN && (
           <div
             data-role="artifact-container"
             className={`min-h-0 transition-all duration-300 ${
@@ -217,11 +225,15 @@ const SynphoraPage = ({
             }`}
           >
             {artifactStatus === ArtifactStatus.COLLAPSED ? (
-              <ArtifactList artifacts={artifacts} onOpenArtifact={openArtifact} />
+              <ArtifactList 
+                artifacts={artifacts} 
+                onOpenArtifact={openArtifact}
+                onHideArtifact={hideArtifact}
+              />
             ) : currentArtifact ? (
               <ArtifactDetail
                 artifact={currentArtifact}
-                onCloseArtifact={closeArtifact}
+                onCloseArtifact={closeArtifactToCollapsed}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">

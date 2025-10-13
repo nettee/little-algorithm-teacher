@@ -66,9 +66,11 @@ export const ArtifactDetail = ({
 export const ArtifactList = ({
   artifacts,
   onOpenArtifact,
+  onHideArtifact,
 }: {
   artifacts: ArtifactData[];
   onOpenArtifact: (artifactId: string) => void;
+  onHideArtifact?: () => void;
 }) => {
   const showDebugInfo = process.env.NEXT_PUBLIC_SHOW_DEBUG_INFO === "true";
 
@@ -111,8 +113,17 @@ export const ArtifactList = ({
       data-role="artifact-list"
       className="h-full flex flex-col bg-white border border-gray-200 rounded-lg"
     >
-      <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+      <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-900">所有文件</h3>
+        {onHideArtifact && (
+          <button
+            onClick={onHideArtifact}
+            className="p-1 rounded-md hover:bg-gray-200 transition-colors"
+            title="隐藏文件面板"
+          >
+            <XIcon className="h-4 w-4 text-gray-500" />
+          </button>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto">
         {/* 用户添加的部分 */}
