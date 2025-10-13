@@ -45,29 +45,11 @@ class NodeType(str, Enum):
 
 class AgentRequest(BaseModel):
     message: str
+    model_key: str
 
 
 def generate_id() -> str:
     return str(uuid.uuid4())[:8]
-
-
-async def generate_text_message(
-    content_parts: list[str],
-) -> AsyncGenerator[SseEvent]:
-    message_id = generate_id()
-
-    for content in content_parts:
-        yield TextMessageEvent.new(message_id=message_id, content=content)
-
-
-async def generate_llm_message(messages) -> AsyncGenerator[SseEvent]:
-    message_id = generate_id()
-
-    llm = create_llm_client()
-    print(f'llm request, messages: {messages}')
-    for chunk in llm.stream(messages):
-        if chunk.content:
-            yield TextMessageEvent.new(message_id=message_id, content=chunk.content)
 
 
 # LangGraph State Schema
@@ -91,7 +73,7 @@ def start_node(state: AgentState) -> AgentState:
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
     print(f'reason_node, tools: {[t.name for t in tools]}')
-    llm = create_llm_client()
+    llm = create_llm_client(state["request"].model_key)
     llm_with_tools = llm.bind_tools(tools)
 
     # 使用分片归并：累积所有chunk，最后合并成完整AIMessage

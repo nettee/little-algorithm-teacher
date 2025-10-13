@@ -32,19 +32,23 @@ import {
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
 import { cleanReferences, parseReferences } from "@/lib/reference-parser";
-import { ChatMessage, ChatStatus, MessagePart, MessageRole } from "@/lib/types";
+import { ChatMessage, ChatStatus, MessageRole } from "@/lib/types";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
 
 const models = [
   {
-    name: "Deepseek V3",
-    value: "deepseek/deepseek-chat",
+    key: "deepseek/deepseek-chat",
+    label: "DeepSeek V3",
   },
   {
-    name: "Deepseek R1",
-    value: "deepseek/deepseek-reasoner",
+    key: "moonshot/kimi-k2",
+    label: "Kimi K2",
+  },
+  { 
+    key: "gemini/gemini-2.5-flash",
+    label: "Gemini 2.5 Flash",
   },
 ];
 
@@ -66,7 +70,7 @@ export const Chatbot = ({
   onArtifactNavigate?: (artifactId: string) => void;
 }) => {
   const [input, setInput] = useState("");
-  const [model, setModel] = useState<string>(models[0].value);
+  const [modelKey, setModelKey] = useState<string>(models[0].key);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [status, setStatus] = useState<ChatStatus>("ready");
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -106,6 +110,7 @@ export const Chatbot = ({
         },
         body: JSON.stringify({
           message: text,
+          model_key: modelKey,
         }),
         signal: controller.signal,
         async onopen(response) {
@@ -366,9 +371,9 @@ export const Chatbot = ({
           <PromptInputTools>
             <PromptInputModelSelect
               onValueChange={(value) => {
-                setModel(value);
+                setModelKey(value);
               }}
-              value={model}
+              value={modelKey}
             >
               <PromptInputModelSelectTrigger>
                 <PromptInputModelSelectValue />
@@ -376,10 +381,10 @@ export const Chatbot = ({
               <PromptInputModelSelectContent>
                 {models.map((model) => (
                   <PromptInputModelSelectItem
-                    key={model.value}
-                    value={model.value}
+                    key={model.key}
+                    value={model.key}
                   >
-                    {model.name}
+                    {model.label}
                   </PromptInputModelSelectItem>
                 ))}
               </PromptInputModelSelectContent>

@@ -18,7 +18,19 @@ class LlmConfig(BaseModel):
 
 
 @lru_cache(maxsize=32)
-def _get_llm_config() -> LlmConfig:
+def _get_llm_config(model_key: str = None) -> LlmConfig:
+    if 'gemini' in model_key or 'google' in model_key:
+        return LlmConfig(
+            base_url=os.getenv("GEMINI_LLM_BASE_URL"),
+            api_key=os.getenv("GEMINI_LLM_API_KEY"),
+            model=os.getenv("GEMINI_LLM_MODEL"),
+        )
+    if 'kimi' in model_key or 'moonshot' in model_key:
+        return LlmConfig(
+            base_url=os.getenv("KIMI_LLM_BASE_URL"),
+            api_key=os.getenv("KIMI_LLM_API_KEY"),
+            model=os.getenv("KIMI_LLM_MODEL"),
+        )
     return LlmConfig(
         base_url=os.getenv("LLM_BASE_URL"),
         api_key=os.getenv("LLM_API_KEY"),
@@ -26,8 +38,10 @@ def _get_llm_config() -> LlmConfig:
     )
 
 
-def create_llm_client() -> ChatOpenAI:
-    llm_config = _get_llm_config()
+def create_llm_client(model_key: str = None) -> ChatOpenAI:
+    llm_config = _get_llm_config(model_key)
+
+    print(f'create_llm_client, model_key: {model_key}, llm_config: {llm_config}')
 
     return ChatOpenAI(
         base_url=llm_config.base_url,
