@@ -32,19 +32,16 @@ export const testMessages: ChatMessage[] = [
             title: '动态规划基础教程',
             artifactId: '1',
             description: '这是一篇关于动态规划基础概念和应用的详细教程，包含了多个经典例题的解析。',
-            type: ArtifactType.ORIGINAL
           },
           {
             title: 'LeetCode 动态规划题目集合',
             artifactId: '2',
             description: '收集了 LeetCode 上最经典的动态规划题目，从简单到困难，适合不同水平的学习者。',
-            type: ArtifactType.COMMENT
           },
           {
             title: '算法导论 - 动态规划章节',
             artifactId: '3',
             description: '经典算法教材中关于动态规划的理论基础和数学证明。',
-            type: ArtifactType.ORIGINAL
           }
         ]
       }

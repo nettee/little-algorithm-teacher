@@ -4,8 +4,10 @@ from pydantic import BaseModel
 
 
 class ArtifactType(str, Enum):
-    ORIGINAL = "original"
-    COMMENT = "comment"
+    PROBLEM = "problem"
+    COURSE = "course"
+    EXPLANATION = "explanation"
+    OTHER = "other"
 
 
 class ArtifactRole(str, Enum):

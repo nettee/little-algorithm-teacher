@@ -66,7 +66,7 @@ class FileStorage:
         self,
         title: str,
         content: str,
-        artifact_type: ArtifactType = ArtifactType.ORIGINAL,
+        artifact_type: ArtifactType = ArtifactType.OTHER,
         role: ArtifactRole = ArtifactRole.USER,
         description: str | None = None,
     ) -> ArtifactData:
@@ -81,7 +81,7 @@ class FileStorage:
         artifact_id: str,
         title: str,
         content: str,
-        artifact_type: ArtifactType = ArtifactType.ORIGINAL,
+        artifact_type: ArtifactType = ArtifactType.OTHER,
         role: ArtifactRole = ArtifactRole.USER,
         description: str | None = None,
     ) -> ArtifactData:

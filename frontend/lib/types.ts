@@ -27,8 +27,10 @@ export interface ChatMessage {
 export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
 export enum ArtifactType {
-  ORIGINAL = 'original',
-  COMMENT = 'comment',
+  PROBLEM = 'problem',
+  COURSE = 'course',
+  EXPLANATION = 'explanation',
+  OTHER = 'other',
 }
 
 export interface ArtifactData {

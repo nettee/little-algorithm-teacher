@@ -149,7 +149,7 @@ const SynphoraPage = ({
       content: "",
       isStreaming: true,
       role: MessageRole.ASSISTANT,
-      type: ArtifactType.COMMENT,
+      type: ArtifactType.OTHER,
     };
 
     // 直接写入 SWR 缓存，避免本地副本

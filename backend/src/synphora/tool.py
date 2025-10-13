@@ -1,10 +1,10 @@
 import json
-from pathlib import Path
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import Tool, tool
 
 from synphora.artifact_manager import artifact_manager
+from synphora.course import CourseManager
 from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType, EvaluateType
@@ -28,13 +28,13 @@ class ArticleEvaluator:
 
         if self.evaluate_type == EvaluateType.COMMENT:
             artifact_title = "文章评价"
-            artifact_type = ArtifactType.COMMENT
+            artifact_type = ArtifactType.OTHER
         elif self.evaluate_type == EvaluateType.TITLE:
             artifact_title = "候选标题"
-            artifact_type = ArtifactType.COMMENT
+            artifact_type = ArtifactType.OTHER
         elif self.evaluate_type == EvaluateType.INTRODUCTION:
             artifact_title = "介绍语"
-            artifact_type = ArtifactType.COMMENT
+            artifact_type = ArtifactType.OTHER
         else:
             raise ValueError(f'Unsupported evaluate type: {self.evaluate_type}')
 
@@ -176,12 +176,13 @@ class ArticleEvaluatorTool:
 class AlgorithmTeacherTool:
     """算法辅导员工具类"""
 
+    COURSE_MANAGER = CourseManager()
+
     @classmethod
     def get_tools(cls) -> list[Tool]:
         return [
             cls.list_articles,
             cls.read_article,
-            # cls.reference_article,
         ]
 
     @staticmethod
@@ -191,55 +192,19 @@ class AlgorithmTeacherTool:
         列出所有文章，返回内容为 JSON 格式，包括文章标题、slug、标签、摘要等。
         """
 
-        data = [
-            {
-                "artifact_id": "14-dynamic-programming-basics",
-                "slug": "14-dynamic-programming-basics",
-                "title": "14 打家劫舍：动态规划的解题四步骤",
-                "tags": ["动态规划"],
-                "summary": "动态规划是一类很讲究「触类旁通」的题型。很多动态规划的解法需要你做过某一类型的例题，再做类似的题目的时候就可以想起来相应的思路。动态规划的典型入门题目是打家劫舍问题，本文以打家劫舍问题为例，讲解动态规划的解题四步骤：定义子问题、写出子问题的递推关系、确定 DP 数组的计算顺序、空间优化。",
-            }
-        ]
-        return json.dumps(data, ensure_ascii=False)
+        courses = AlgorithmTeacherTool.COURSE_MANAGER.list_courses()
+        data = [course.to_data() for course in courses]
+        result = json.dumps(data, ensure_ascii=False)
+        print(f'list_articles, result: {result}')
+        return result
 
     @staticmethod
     @tool
-    def read_article(slug: str) -> str:
+    def read_article(artifact_id: str) -> str:
         """
-        根据文章slug，读取文章
+        根据 artifact_id 读取文章内容
         """
 
-        file_path = AlgorithmTeacherTool._get_article_path(slug)
-        if not file_path.exists():
-            return '文章不存在'
-        with open(file_path, encoding='utf-8') as f:
-            content = f.read()
+        content = AlgorithmTeacherTool.COURSE_MANAGER.read_course_content(artifact_id)
+        print(f'read_article, artifact_id: {artifact_id}, content: {content[:100]}')
         return content
-
-    @staticmethod
-    @tool
-    def reference_article(artifact_id: str, slug: str):
-        """
-        在回答中引用某篇文章
-        """
-        print(f'reference_article, slug: {slug}')
-        artifact = artifact_manager.create_artifact_from_file(
-            artifact_id=artifact_id,
-            path=AlgorithmTeacherTool._get_article_path(slug),
-            artifact_type=ArtifactType.ORIGINAL,
-            role=ArtifactRole.ASSISTANT,
-        )
-        write_sse_event(
-            ArtifactListUpdatedEvent.new(
-                artifact_id=artifact.id,
-                title=artifact.title,
-                artifact_type=artifact.type.value,
-                role=artifact.role.value,
-            )
-        )
-
-    @staticmethod
-    def _get_article_path(slug: str) -> Path:
-        return (
-            Path(__file__).parent / 'data' / 'leetcode-by-example' / slug / f'{slug}.md'
-        )

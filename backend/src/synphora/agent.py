@@ -11,6 +11,7 @@ from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
 from synphora.artifact_manager import artifact_manager
+from synphora.course import CourseManager
 from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType
@@ -118,24 +119,20 @@ def reason_node(state: AgentState) -> AgentState:
         print(f'reference_article, reference: {reference}')
 
         artifact_id = reference.artifactId
-        slug = reference.artifactId  # TODO get slug
-        title = reference.title
 
-        artifact = artifact_manager.create_artifact_from_file(
+        course_manager = CourseManager()
+        course = course_manager.get_course(artifact_id)
+        title = course.title
+        content = course_manager.read_course_content(artifact_id)
+
+        artifact = artifact_manager.create_artifact_with_id(
             artifact_id=artifact_id,
             title=title,
-            path=AlgorithmTeacherTool._get_article_path(slug),
-            artifact_type=ArtifactType.ORIGINAL,
+            content=content,
+            artifact_type=ArtifactType.COURSE,
             role=ArtifactRole.ASSISTANT,
         )
-        write_sse_event(
-            ArtifactListUpdatedEvent.new(
-                artifact_id=artifact.id,
-                title=artifact.title,
-                artifact_type=artifact.type.value,
-                role=artifact.role.value,
-            )
-        )
+        write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
 
     return {"messages": [ai_message]}
 

@@ -101,7 +101,7 @@ async def create_artifact(request: CreateArtifactRequest):
         content=request.content,
         description=request.description,
         role=ArtifactRole.USER,
-        artifact_type=ArtifactType.ORIGINAL,
+        artifact_type=ArtifactType.OTHER,
     )
     print(f"✅ create_artifact completed, artifact ID: {artifact.id}")
     return artifact
@@ -121,7 +121,7 @@ async def upload_artifact(file: UploadFile = File(...)):
         title=file.filename,
         content=content_str,
         role=ArtifactRole.USER,
-        artifact_type=ArtifactType.ORIGINAL,
+        artifact_type=ArtifactType.OTHER,
     )
     print(
         f"✅ upload_artifact completed, file '{file.filename}' saved as artifact ID: {artifact.id}"
@@ -176,7 +176,9 @@ async def generate_sample_article(request: GenerateSampleArticleRequest):
         generated_content = response.content
 
         if not generated_content:
-            raise HTTPException(status_code=500, detail="Failed to generate article content")
+            raise HTTPException(
+                status_code=500, detail="Failed to generate article content"
+            )
 
         # 创建 artifact
         title = "示例文章.md"
@@ -184,12 +186,16 @@ async def generate_sample_article(request: GenerateSampleArticleRequest):
             title=title,
             content=generated_content,
             role=ArtifactRole.ASSISTANT,
-            artifact_type=ArtifactType.ORIGINAL,
+            artifact_type=ArtifactType.OTHER,
         )
 
-        print(f"✅ generate_sample_article completed, created artifact ID: {artifact.id}")
+        print(
+            f"✅ generate_sample_article completed, created artifact ID: {artifact.id}"
+        )
         return artifact
 
     except Exception as e:
         print(f"❌ generate_sample_article failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate sample article: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate sample article: {str(e)}"
+        )

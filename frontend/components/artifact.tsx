@@ -10,6 +10,7 @@ import {
 } from "./ai-elements/artifact";
 import { Streamdown } from "streamdown";
 import { XIcon, Loader2 } from "lucide-react";
+import { getArtifactTypeRepresentation } from "@/lib/artifact";
 
 // Artifact 详情组件
 export const ArtifactDetail = ({
@@ -98,14 +99,8 @@ export const ArtifactList = ({
             <div className="text-xs text-gray-500 mt-1">{artifact.id}</div>
           )}
         </div>
-        <div
-          className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
-            artifact.type === ArtifactType.ORIGINAL
-              ? "bg-green-100 text-green-700"
-              : "bg-blue-100 text-blue-700"
-          }`}
-        >
-          {artifact.type === ArtifactType.ORIGINAL ? "原文" : "评论"}
+        <div className={"text-xs px-2 py-1 rounded-full flex-shrink-0 bg-green-100 text-green-700"} >
+          {getArtifactTypeRepresentation(artifact.type)}
         </div>
       </div>
     </div>
