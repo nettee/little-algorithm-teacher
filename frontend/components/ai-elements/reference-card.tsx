@@ -82,8 +82,7 @@ export const ReferenceCards = ({
   return (
     <div
       className={cn(
-        'grid gap-3',
-        references.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2',
+        'flex flex-wrap gap-3',
         className
       )}
       {...props}

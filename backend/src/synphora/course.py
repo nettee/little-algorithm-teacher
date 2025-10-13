@@ -22,6 +22,13 @@ COURSES = [
         tags=["动态规划"],
         summary="动态规划是一类很讲究「触类旁通」的题型。很多动态规划的解法需要你做过某一类型的例题，再做类似的题目的时候就可以想起来相应的思路。动态规划的典型入门题目是打家劫舍问题，本文以打家劫舍问题为例，讲解动态规划的解题四步骤：定义子问题、写出子问题的递推关系、确定 DP 数组的计算顺序、空间优化。",
     ),
+    Course(
+        artifact_id="15-two-dimensional-dynamic-programming",
+        slug="15-two-dimensional-dynamic-programming",
+        title="15 最长公共子序列：二维动态规划的解法",
+        tags=["动态规划"],
+        summary="本文会以典型题目最长公共子序列（LCS）问题入手，讲解二维动态规划问题的解题要领。",
+    ),
 ]
 
 

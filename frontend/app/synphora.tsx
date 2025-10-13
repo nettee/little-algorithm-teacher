@@ -75,7 +75,15 @@ const testInitialMessages: ChatMessage[] = [
     parts: [
       {
         type: "text",
-        text: "这里有一个关于动态规划的例子，你可以参考这个文档来学习基础知识。<reference><artifactId>14-dynamic-programming-basics</artifactId><title>动态规划基础</title></reference>",
+        text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。
+        <reference>
+          <artifactId>14-dynamic-programming-basics</artifactId>
+          <title>动态规划基础</title>
+        </reference>
+        <reference>
+          <artifactId>15-two-dimensional-dynamic-programming</artifactId>
+          <title>最长公共子序列：二维动态规划的解法</title>
+        </reference>`,
       },
     ],
   },

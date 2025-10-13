@@ -14,13 +14,19 @@
 
 1. 使回答正文尽量简短，不要直接复制文章内容
 2. 推荐用户去阅读原文，获得详细的讲解
-3. 在回答的结尾引用该文章，引用格式如下：
+3. 在回答的结尾引用文章，引用格式如下：
 
 ```
-<reference>
-    <artifactId>Artifact ID</artifactId>
-    <title>文章标题</title>
-</reference>
+<references>
+    <reference>
+        <artifactId>文章一的 Artifact ID</artifactId>
+        <title>文章一的标题</title>
+    </reference>
+    <reference>
+        <artifactId>文章二的 Artifact ID</artifactId>
+        <title>文章二的标题</title>
+    </reference>
+</references>
 ```
 
 ## 任务信息

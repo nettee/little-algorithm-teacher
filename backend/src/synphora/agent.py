@@ -115,24 +115,22 @@ def reason_node(state: AgentState) -> AgentState:
 
     references = parse_reference(ai_message.content)
     if references:
-        reference = references[0]
-        print(f'reference_article, reference: {reference}')
+        print(f'reference_article, references: {references}')
+        for reference in references:
+            artifact_id = reference.artifactId
+            course_manager = CourseManager()
+            course = course_manager.get_course(artifact_id)
+            title = course.title
+            content = course_manager.read_course_content(artifact_id)
 
-        artifact_id = reference.artifactId
-
-        course_manager = CourseManager()
-        course = course_manager.get_course(artifact_id)
-        title = course.title
-        content = course_manager.read_course_content(artifact_id)
-
-        artifact = artifact_manager.create_artifact_with_id(
-            artifact_id=artifact_id,
-            title=title,
-            content=content,
-            artifact_type=ArtifactType.COURSE,
-            role=ArtifactRole.ASSISTANT,
-        )
-        write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
+            artifact = artifact_manager.create_artifact_with_id(
+                artifact_id=artifact_id,
+                title=title,
+                content=content,
+                artifact_type=ArtifactType.COURSE,
+                role=ArtifactRole.ASSISTANT,
+            )
+            write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
 
     return {"messages": [ai_message]}
 
