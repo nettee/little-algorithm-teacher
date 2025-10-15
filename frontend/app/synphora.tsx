@@ -27,7 +27,10 @@ const useArtifacts = (
   const currentArtifact =
     artifacts.find((artifact) => artifact.id === currentArtifactId) ||
     artifacts[0];
-
+  
+  console.log(`artifacts: ${artifacts}`);
+  console.log(`currentArtifactId: ${currentArtifactId}, currentArtifact: ${currentArtifact}`);
+    
   const collapseArtifact = () => {
     setArtifactStatus(ArtifactStatus.COLLAPSED);
   };
@@ -55,11 +58,13 @@ const SynphoraPage = () => {
   const { initialArtifactStatus, initialMessages } = getSynphoraInitialData();
 
   const {
-    data: artifactsData = [],
+    data,
     error,
     isLoading,
     mutate,
   } = useSWR("/artifacts", fetchArtifacts);
+
+  let artifactsData = isSynphoraPageTest() ? getSynphoraTestArtifacts() : data || [];
 
   const {
     artifacts,
@@ -189,7 +194,7 @@ const SynphoraPage = () => {
           >
             {artifactStatus === ArtifactStatus.COLLAPSED ? (
               <ArtifactList
-                artifacts={isSynphoraPageTest() ? getSynphoraTestArtifacts() : artifacts}
+                artifacts={artifacts}
                 onOpenArtifact={openArtifact}
                 onHideArtifact={hideArtifact}
               />
