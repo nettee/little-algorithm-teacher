@@ -5,22 +5,22 @@ import useSWR from "swr";
 
 import { ArtifactDetail, ArtifactList } from "@/components/artifact";
 import { Chatbot } from "@/components/chatbot";
-import { ArtifactData, ChatMessage, MessageRole, ArtifactType } from "@/lib/types";
+import {
+  ArtifactData,
+  MessageRole,
+  ArtifactType,
+  ArtifactStatus,
+} from "@/lib/types";
 import { fetchArtifacts } from "@/lib/api";
-
-enum ArtifactStatus {
-  HIDDEN = "hidden",
-  COLLAPSED = "collapsed",
-  EXPANDED = "expanded",
-}
+import { getSynphoraInitialData, getSynphoraTestArtifacts } from "@/lib/synphora-data";
+import { isSynphoraPageTest } from "@/lib/env";
 
 const useArtifacts = (
-  initialStatus: ArtifactStatus = ArtifactStatus.HIDDEN,
+  initialStatus: ArtifactStatus,
   artifacts: ArtifactData[],
   initialArtifactId: string
 ) => {
-  const [artifactStatus, setArtifactStatus] =
-    useState<ArtifactStatus>(artifacts.length > 0 ? initialStatus : ArtifactStatus.HIDDEN);
+  const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>(initialStatus);
   const [currentArtifactId, setCurrentArtifactId] =
     useState<string>(initialArtifactId);
 
@@ -51,57 +51,8 @@ const useArtifacts = (
   };
 };
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: "2",
-    role: MessageRole.ASSISTANT,
-    parts: [
-      {
-        type: "text",
-        text: "你好，我是你的算法题辅导员。请输入你想学习的算法题，我会根据《LeetCode 例题精讲》的思路为你讲解。",
-      },
-    ],
-  },
-];
-
-const testInitialMessages: ChatMessage[] = [
-  {
-    id: "2",
-    role: MessageRole.ASSISTANT,
-    parts: [
-      {
-        type: "text",
-        text: "你好，我是你的算法题辅导员。请输入你想学习的算法题，我会根据《LeetCode 例题精讲》的思路为你讲解。",
-      },
-    ],
-  },
-  {
-    id: "4",
-    role: MessageRole.ASSISTANT,
-    parts: [
-      {
-        type: "text",
-        text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。
-        <reference>
-          <artifactId>14-dynamic-programming-basics</artifactId>
-          <title>动态规划基础</title>
-        </reference>
-        <reference>
-          <artifactId>15-two-dimensional-dynamic-programming</artifactId>
-          <title>最长公共子序列：二维动态规划的解法</title>
-        </reference>`,
-      },
-    ],
-  },
-];
-
-
-const SynphoraPage = ({
-  initialArtifactStatus = ArtifactStatus.HIDDEN,
-}: {
-  initialArtifactStatus?: ArtifactStatus;
-} = {}) => {
-  const synphoraPageTest = process.env.NEXT_PUBLIC_SYNPHORA_PAGE_TEST === "true";
+const SynphoraPage = () => {
+  const { initialArtifactStatus, initialMessages } = getSynphoraInitialData();
 
   const {
     data: artifactsData = [],
@@ -156,7 +107,11 @@ const SynphoraPage = ({
   };
 
   // 处理流式 Artifact 事件 - 使用 SWR 缓存作为单一数据源
-  const onArtifactContentStart = (artifactId: string, title: string, description?: string) => {
+  const onArtifactContentStart = (
+    artifactId: string,
+    title: string,
+    description?: string
+  ) => {
     const newArtifact: ArtifactData = {
       id: artifactId,
       title,
@@ -169,7 +124,7 @@ const SynphoraPage = ({
 
     // 直接写入 SWR 缓存，避免本地副本
     mutate((prev: ArtifactData[] = []) => {
-      if (prev.some(a => a.id === artifactId)) return prev;
+      if (prev.some((a) => a.id === artifactId)) return prev;
       return [...prev, newArtifact];
     }, false);
     setCurrentArtifactId(artifactId);
@@ -177,15 +132,23 @@ const SynphoraPage = ({
   };
 
   const onArtifactContentChunk = (artifactId: string, chunk: string) => {
-    mutate((prev: ArtifactData[] = []) =>
-      prev.map(a => a.id === artifactId ? { ...a, content: (a.content || "") + chunk } : a)
-    , false);
+    mutate(
+      (prev: ArtifactData[] = []) =>
+        prev.map((a) =>
+          a.id === artifactId ? { ...a, content: (a.content || "") + chunk } : a
+        ),
+      false
+    );
   };
 
   const onArtifactContentComplete = (artifactId: string) => {
-    mutate((prev: ArtifactData[] = []) =>
-      prev.map(a => a.id === artifactId ? { ...a, isStreaming: false } : a)
-    , false);
+    mutate(
+      (prev: ArtifactData[] = []) =>
+        prev.map((a) =>
+          a.id === artifactId ? { ...a, isStreaming: false } : a
+        ),
+      false
+    );
   };
 
   const onArtifactListUpdated = () => {
@@ -205,11 +168,11 @@ const SynphoraPage = ({
         <div
           data-role="chatbot-container"
           className={`flex flex-col min-h-0 ${
-            artifactStatus === ArtifactStatus.EXPANDED ? "w-1/3" : "flex-1" 
+            artifactStatus === ArtifactStatus.EXPANDED ? "w-1/3" : "flex-1"
           }`}
         >
           <Chatbot
-            initialMessages={synphoraPageTest ? testInitialMessages : initialMessages}
+            initialMessages={initialMessages}
             onArtifactContentStart={onArtifactContentStart}
             onArtifactContentChunk={onArtifactContentChunk}
             onArtifactContentComplete={onArtifactContentComplete}
@@ -225,8 +188,8 @@ const SynphoraPage = ({
             }`}
           >
             {artifactStatus === ArtifactStatus.COLLAPSED ? (
-              <ArtifactList 
-                artifacts={artifacts} 
+              <ArtifactList
+                artifacts={isSynphoraPageTest() ? getSynphoraTestArtifacts() : artifacts}
                 onOpenArtifact={openArtifact}
                 onHideArtifact={hideArtifact}
               />

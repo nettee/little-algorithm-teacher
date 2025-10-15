@@ -26,6 +26,12 @@ export interface ChatMessage {
 
 export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
 
+export enum ArtifactStatus {
+  HIDDEN = "hidden",
+  COLLAPSED = "collapsed",
+  EXPANDED = "expanded",
+}
+
 export enum ArtifactType {
   PROBLEM = 'problem',
   COURSE = 'course',
