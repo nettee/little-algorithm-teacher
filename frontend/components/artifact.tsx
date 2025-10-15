@@ -12,6 +12,7 @@ import {
   ArtifactHeader,
   ArtifactTitle,
 } from "./ai-elements/artifact";
+import MarkmapHooks from "./markmap-hooks";
 
 // Artifact 详情组件
 export const ArtifactDetail = ({
@@ -49,13 +50,16 @@ export const ArtifactDetail = ({
       </ArtifactHeader>
       <ArtifactContent className="h-full">
         {/* 定义 classname 为 streamdown，这样 globals.css 中的样式会生效 */}
-        <Streamdown className="streamdown">{artifact.content}</Streamdown>
+        {/* <Streamdown className="streamdown">{artifact.content}</Streamdown>
         {artifact.isStreaming && (
           <div className="mt-2 text-sm text-gray-500 flex items-center gap-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             正在生成中...
           </div>
-        )}
+        )} */}
+        <div className="h-full flex flex-col border-1 border-gray-200 rounded-lg">
+          <MarkmapHooks />
+        </div>
       </ArtifactContent>
     </Artifact>
   );

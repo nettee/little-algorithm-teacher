@@ -101,7 +101,7 @@ export const getSynphoraInitialData = (): {
 } => {
   if (isSynphoraPageTest()) {
     return {
-      initialArtifactStatus: ArtifactStatus.COLLAPSED,
+      initialArtifactStatus: ArtifactStatus.EXPANDED,
       initialMessages: testInitialMessages,
     };
   }
