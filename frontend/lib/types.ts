@@ -34,6 +34,7 @@ export enum ArtifactStatus {
 
 export enum ArtifactType {
   PROBLEM = 'problem',
+  CODE = 'code',
   COURSE = 'course',
   EXPLANATION = 'explanation',
   OTHER = 'other',

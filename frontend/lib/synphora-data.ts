@@ -54,6 +54,20 @@ const testInitialMessages: ChatMessage[] = [
 
 const testArtifacts: ArtifactData[] = [
   {
+    id: "problem-1",
+    role: MessageRole.USER,
+    type: ArtifactType.PROBLEM,
+    title: "原问题",
+    content: "给定一个整数数组，找出其中两个数，使得它们的和等于目标值。",
+  },
+  {
+    id: "code-1",
+    role: MessageRole.USER,
+    type: ArtifactType.CODE,
+    title: "代码",
+    content: "使用动态规划解决这个问题。",
+  },
+  {
     id: "dynamic-programming-basics",
     role: MessageRole.ASSISTANT,
     type: ArtifactType.COURSE,
@@ -71,6 +85,13 @@ const testArtifacts: ArtifactData[] = [
     type: ArtifactType.COURSE,
     title: "二维动态规划的解法",
     content: "二维动态规划问题同样遵循这四个解题步骤，不过每个步骤可能会更复杂。",
+  },
+  {
+    id: "explanation-1",
+    role: MessageRole.ASSISTANT,
+    type: ArtifactType.EXPLANATION,
+    title: "文字讲解",
+    content: "解释二维动态规划的解法。",
   },
 ];
 
