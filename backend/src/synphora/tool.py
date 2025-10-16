@@ -222,7 +222,7 @@ class AlgorithmTeacherTool:
         # TODO mock
         title = "动态规划解题思路"
         content = """
-        # 动态规划
+# 动态规划
 
 + 定义子问题
 + 写出子问题的递推关系

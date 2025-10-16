@@ -1,8 +1,6 @@
-import { getArtifactTypeRepresentation } from "@/lib/artifact";
 import { isShowDebugInfo } from "@/lib/env";
 import { ArtifactData, ArtifactType } from "@/lib/types";
 import { Loader2, XIcon } from "lucide-react";
-import { Streamdown } from "streamdown";
 import {
   Artifact,
   ArtifactAction,
@@ -12,8 +10,8 @@ import {
   ArtifactHeader,
   ArtifactTitle,
 } from "./ai-elements/artifact";
-import MindMap from "./mindmap";
 import Markdown from "./markdown";
+import MindMap from "./mindmap";
 
 // Artifact 详情组件
 export const ArtifactDetail = ({
@@ -98,11 +96,13 @@ class ArtifactGrouper {
     }
   }
 
-  public getArtifactLabel(artifact: ArtifactData): string | null {
+  public getArtifactLabel(artifact: ArtifactData): { text: string | null, color: string | null } {
     if (artifact.type === ArtifactType.COURSE) {
-      return "课程";
+      return { text: "课程", color: "bg-green-100 text-green-700" };
+    } else if (artifact.type === ArtifactType.MIND_MAP) {
+      return { text: "思维导图", color: "bg-orange-100 text-orange-700" };
     } else {
-      return null;
+      return { text: null, color: null };
     }
   }
 }
@@ -132,7 +132,7 @@ export const ArtifactList = ({
   const artifactsGroups = artifactGrouper.groupArtifacts(artifacts);
 
   const renderArtifactItem = (artifact: ArtifactData) => {
-    const artifactLabel = artifactGrouper.getArtifactLabel(artifact);
+    const { text: labelText, color: labelColor } = artifactGrouper.getArtifactLabel(artifact);
     return (
       <div
         key={artifact.id}
@@ -153,9 +153,9 @@ export const ArtifactList = ({
               <div className="text-xs text-gray-500 mt-1">{artifact.id}</div>
             )}
           </div>
-          {artifactLabel && (
-            <div className="text-xs px-2 py-1 rounded-full flex-shrink-0 bg-green-100 text-green-700">
-              {artifactLabel}
+          {labelText && (
+            <div className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${labelColor}`}>
+              {labelText}
             </div>
           )}
         </div>

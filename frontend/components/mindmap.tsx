@@ -26,6 +26,8 @@ function renderToolbar(mm: Markmap, wrapper: HTMLElement) {
 }
 
 export default function MindMap({ content }: { content: string }) {
+  console.log(`MindMap content: ${content}`)
+
   // DOM 元素引用
   const refSvg = useRef<SVGSVGElement>(null);        // SVG 画布元素
   const refMm = useRef<Markmap>(null);               // Markmap 实例

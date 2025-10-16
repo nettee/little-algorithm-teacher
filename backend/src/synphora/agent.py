@@ -90,8 +90,8 @@ def process_references(references: list[Reference]):
             )
 
         elif reference.type == ReferenceType.MIND_MAP:
-            # TODO
-            print(f'process mind map reference: {reference}')
+            # 无需处理，因为在 tool 中已经创建了 artifact
+            pass
 
         # TODO only update once for all references
         write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))

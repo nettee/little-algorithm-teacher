@@ -36,7 +36,7 @@ export enum ArtifactType {
   PROBLEM = 'problem',
   CODE = 'code',
   COURSE = 'course',
-  MIND_MAP = 'mindmap',
+  MIND_MAP = 'mind_map',
   EXPLANATION = 'explanation',
   OTHER = 'other',
 }
