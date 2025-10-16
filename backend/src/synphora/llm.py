@@ -41,7 +41,7 @@ def _get_llm_config(model_key: str = None) -> LlmConfig:
 def create_llm_client(model_key: str = None) -> ChatOpenAI:
     llm_config = _get_llm_config(model_key)
 
-    print(f'create_llm_client, model_key: {model_key}, llm_config: {llm_config}')
+    # print(f'create_llm_client, model_key: {model_key}, llm_config: {llm_config}')
 
     return ChatOpenAI(
         base_url=llm_config.base_url,

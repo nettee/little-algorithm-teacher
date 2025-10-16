@@ -33,6 +33,7 @@ dev = [
 
 [project.scripts]
 workflow = "synphora.workflow:main"
+agent = "synphora.agent:main"
 server = "synphora.cli:server"
 dev = "synphora.cli:dev"
 

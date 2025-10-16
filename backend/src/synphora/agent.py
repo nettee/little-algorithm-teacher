@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from enum import Enum
 from typing import Annotated, TypedDict
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
@@ -63,7 +63,7 @@ tools = AlgorithmTeacherTool.get_tools()
 
 def start_node(state: AgentState) -> AgentState:
     """开始节点：发送运行开始事件"""
-    print('start_node')
+    # print('start_node')
 
     write_sse_event(RunStartedEvent.new())
 
@@ -72,7 +72,7 @@ def start_node(state: AgentState) -> AgentState:
 
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
-    print(f'reason_node, tools: {[t.name for t in tools]}')
+    # print(f'reason_node, tools: {[t.name for t in tools]}')
     llm = create_llm_client(state["request"].model_key)
     llm_with_tools = llm.bind_tools(tools)
 
@@ -124,11 +124,11 @@ def should_continue(state: AgentState) -> NodeType:
 
     # 如果最后一条消息包含工具调用，则继续到act节点
     if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-        print(f'tool calls: {last_message.tool_calls}')
+        # print(f'tool calls: {last_message.tool_calls}')
         return NodeType.ACT
     # 否则结束
     else:
-        print('no tool calls, go to last node')
+        # print('no tool calls, go to last node')
         return NodeType.LAST
 
 
@@ -148,7 +148,7 @@ def merge_chunks(accumulated_chunks):
 
 def end_node(state: AgentState) -> AgentState:
     """结束节点：发送运行完成事件"""
-    print('end_node')
+    # print('end_node')
 
     write_sse_event(RunFinishedEvent.new())
 
@@ -219,3 +219,48 @@ async def generate_agent_response(
                 event = payload.get("event")
                 if event:
                     yield event
+
+
+def run_agent(request: AgentRequest):
+    graph = build_agent_graph()
+
+    # 创建初始消息
+    agent_prompts = AgentPrompts()
+    initial_messages = [
+        SystemMessage(content=agent_prompts.system()),
+        HumanMessage(content=agent_prompts.user(user_message=request.message)),
+    ]
+
+    # 创建初始状态
+    initial_state: AgentState = {
+        "request": request,
+        "messages": initial_messages,
+    }
+
+    # 执行 agent，并打印 message 和 tool calls
+    for event in graph.stream(initial_state):
+        # 检查是否为 last node，如果是则跳过打印
+        if NodeType.LAST in event:
+            continue
+
+        for value in event.values():
+            last_message = value["messages"][-1]
+            if not isinstance(last_message, AIMessage):
+                continue
+            print('-' * 100)
+            if last_message.content:
+                print(f"🤖: {last_message.content}")
+            if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+                for tool_call in last_message.tool_calls:
+                    print(f'🔧: ToolCall({tool_call["name"]}, {tool_call["args"]})')
+
+
+def main():
+    request = AgentRequest(
+        message='编辑距离这道题怎么解？', model_key='deepseek/deepseek-chat'
+    )
+    run_agent(request)
+
+
+if __name__ == '__main__':
+    main()
