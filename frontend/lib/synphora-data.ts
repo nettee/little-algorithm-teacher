@@ -1,5 +1,11 @@
 import { isSynphoraPageTest } from "./env";
-import { ArtifactData, ArtifactStatus, ArtifactType, ChatMessage, MessageRole } from "./types";
+import {
+  ArtifactData,
+  ArtifactStatus,
+  ArtifactType,
+  ChatMessage,
+  MessageRole,
+} from "./types";
 
 const initialMessages: ChatMessage[] = [
   {
@@ -28,13 +34,13 @@ const testInitialMessages: ChatMessage[] = [
   {
     id: "2",
     role: MessageRole.USER,
-    parts: [{ type: 'text', text: '动态规划怎么解？' }],
+    parts: [{ type: "text", text: "动态规划怎么解？" }],
   },
   {
     id: "4",
     role: MessageRole.ASSISTANT,
     parts: [
-      { 
+      {
         type: "text",
         text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。
         <references>
@@ -84,7 +90,22 @@ const testArtifacts: ArtifactData[] = [
     role: MessageRole.ASSISTANT,
     type: ArtifactType.COURSE,
     title: "二维动态规划的解法",
-    content: "二维动态规划问题同样遵循这四个解题步骤，不过每个步骤可能会更复杂。",
+    content:
+      "二维动态规划问题同样遵循这四个解题步骤，不过每个步骤可能会更复杂。",
+  },
+  {
+    id: "mindmap-1",
+    role: MessageRole.ASSISTANT,
+    type: ArtifactType.MIND_MAP,
+    title: "思维导图",
+    content: `
+# 动态规划
+
++ 定义子问题
++ 写出子问题的递推关系
++ 确定 DP 数组的计算顺序
++ 空间优化（可选）1
+`,
   },
   {
     id: "explanation-1",
@@ -101,7 +122,7 @@ export const getSynphoraInitialData = (): {
 } => {
   if (isSynphoraPageTest()) {
     return {
-      initialArtifactStatus: ArtifactStatus.EXPANDED,
+      initialArtifactStatus: ArtifactStatus.COLLAPSED,
       initialMessages: testInitialMessages,
     };
   }
@@ -110,8 +131,14 @@ export const getSynphoraInitialData = (): {
     initialArtifactStatus: ArtifactStatus.HIDDEN,
     initialMessages: initialMessages,
   };
-}
+};
 
-export const getSynphoraTestArtifacts = (): ArtifactData[] => {
-  return testArtifacts;
-}
+export const getSynphoraTestData = (): {
+  artifacts: ArtifactData[];
+  initialArtifactId: string;
+} => {
+  return {
+    artifacts: testArtifacts,
+    initialArtifactId: "explanation-1",
+  };
+};

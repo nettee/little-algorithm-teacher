@@ -12,7 +12,7 @@ import {
   ArtifactStatus,
 } from "@/lib/types";
 import { fetchArtifacts } from "@/lib/api";
-import { getSynphoraInitialData, getSynphoraTestArtifacts } from "@/lib/synphora-data";
+import { getSynphoraInitialData, getSynphoraTestData } from "@/lib/synphora-data";
 import { isSynphoraPageTest } from "@/lib/env";
 
 const useArtifacts = (
@@ -64,7 +64,16 @@ const SynphoraPage = () => {
     mutate,
   } = useSWR("/artifacts", fetchArtifacts);
 
-  let artifactsData = isSynphoraPageTest() ? getSynphoraTestArtifacts() : data || [];
+  let artifactsData: ArtifactData[] = [];
+  let initialArtifactId: string = "";
+  if (isSynphoraPageTest()) {
+    let testData = getSynphoraTestData();
+    artifactsData = testData.artifacts;
+    initialArtifactId = testData.initialArtifactId;
+  } else {
+    artifactsData = data || [];
+    initialArtifactId = artifactsData[0]?.id || "";
+  }
 
   const {
     artifacts,
@@ -77,7 +86,7 @@ const SynphoraPage = () => {
   } = useArtifacts(
     initialArtifactStatus,
     artifactsData,
-    artifactsData[0]?.id || ""
+    initialArtifactId,
   );
 
   if (isLoading) {
