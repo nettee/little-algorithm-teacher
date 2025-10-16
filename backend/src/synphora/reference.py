@@ -1,9 +1,16 @@
 import re
+from enum import Enum
 
 from pydantic import BaseModel
 
 
+class ReferenceType(str, Enum):
+    COURSE = "COURSE"
+    MIND_MAP = "MIND_MAP"
+
+
 class Reference(BaseModel):
+    type: ReferenceType
     artifactId: str
     title: str
 
@@ -48,24 +55,33 @@ def parse_references(content: str) -> list[Reference]:
     for match in re.finditer(reference_pattern, content):
         reference_content = match.group(1)
 
-        # 在 reference 内容中查找 artifactId 和 title，不要求特定顺序
+        # 在 reference 内容中查找 type、artifactId 和 title，不要求特定顺序
         # 使用更严格的正则表达式，不允许嵌套标签
+        type_match = re.search(r'<type>([^<]+)</type>', reference_content)
         artifact_id_match = re.search(
             r'<artifactId>([^<]+)</artifactId>', reference_content
         )
         title_match = re.search(r'<title>([^<]+)</title>', reference_content)
 
-        # 只有当两个标签都存在且内容不为空时才创建引用对象
-        if artifact_id_match and title_match:
+        # 只有当所有必需标签都存在且内容不为空时才创建引用对象
+        if type_match and artifact_id_match and title_match:
+            type_value = type_match.group(1).strip()
             artifact_id = artifact_id_match.group(1).strip()
             title = title_match.group(1).strip()
 
-            # 只有当 artifactId 和 title 都不为空时才添加引用
-            if artifact_id and title:
-                reference = Reference(
-                    artifactId=artifact_id,
-                    title=title,
-                )
-                references.append(reference)
+            # 只有当所有字段都不为空时才添加引用
+            if type_value and artifact_id and title:
+                try:
+                    # 验证 type 值是否为有效的 ReferenceType
+                    reference_type = ReferenceType(type_value)
+                    reference = Reference(
+                        type=reference_type,
+                        artifactId=artifact_id,
+                        title=title,
+                    )
+                    references.append(reference)
+                except ValueError:
+                    # 如果 type 值无效，跳过这个引用
+                    continue
 
     return references

@@ -16,7 +16,7 @@ from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType
 from synphora.prompt import AgentPrompts
-from synphora.reference import parse_references
+from synphora.reference import Reference, ReferenceType, parse_references
 from synphora.sse import (
     ArtifactListUpdatedEvent,
     RunFinishedEvent,
@@ -70,6 +70,33 @@ def start_node(state: AgentState) -> AgentState:
     return state
 
 
+def process_references(references: list[Reference]):
+    print(f'process references: {references}')
+    for reference in references:
+        artifact_id = reference.artifactId
+
+        if reference.type == ReferenceType.COURSE:
+            course_manager = CourseManager()
+            course = course_manager.get_course(artifact_id)
+            title = course.title
+            content = course_manager.read_course_content(artifact_id)
+
+            artifact = artifact_manager.create_artifact_with_id(
+                artifact_id=artifact_id,
+                title=title,
+                content=content,
+                artifact_type=ArtifactType.COURSE,
+                role=ArtifactRole.ASSISTANT,
+            )
+
+        elif reference.type == ReferenceType.MIND_MAP:
+            # TODO
+            print(f'process mind map reference: {reference}')
+
+        # TODO only update once for all references
+        write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
+
+
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
     # print(f'reason_node, tools: {[t.name for t in tools]}')
@@ -97,22 +124,7 @@ def reason_node(state: AgentState) -> AgentState:
 
     references = parse_references(ai_message.content)
     if references:
-        print(f'reference_article, references: {references}')
-        for reference in references:
-            artifact_id = reference.artifactId
-            course_manager = CourseManager()
-            course = course_manager.get_course(artifact_id)
-            title = course.title
-            content = course_manager.read_course_content(artifact_id)
-
-            artifact = artifact_manager.create_artifact_with_id(
-                artifact_id=artifact_id,
-                title=title,
-                content=content,
-                artifact_type=ArtifactType.COURSE,
-                role=ArtifactRole.ASSISTANT,
-            )
-            write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
+        process_references(references)
 
     return {"messages": [ai_message]}
 
@@ -162,7 +174,7 @@ def build_agent_graph() -> StateGraph:
     # 添加节点
     graph.add_node(NodeType.FIRST, start_node)
     graph.add_node(NodeType.REASON, reason_node)
-    graph.add_node(NodeType.ACT, ToolNode(tools))
+    graph.add_node(NodeType.ACT, ToolNode(tools, handle_tool_errors=False))
     graph.add_node(NodeType.LAST, end_node)
 
     # 连接节点 - re-act 模式

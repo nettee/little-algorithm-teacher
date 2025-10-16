@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class ArtifactType(str, Enum):
     PROBLEM = "problem"
     COURSE = "course"
+    MIND_MAP = "mind_map"
     EXPLANATION = "explanation"
     OTHER = "other"
 
