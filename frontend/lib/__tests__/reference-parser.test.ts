@@ -11,6 +11,7 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "abc123",
       title: "测试标题",
     });
@@ -29,10 +30,12 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(2);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "ref1",
       title: "标题1",
     });
     expect(result.references[1]).toEqual({
+      type: "course",
       artifactId: "ref2",
       title: "标题2",
     });
@@ -46,6 +49,7 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "compact",
       title: "紧凑标题",
     });
@@ -61,6 +65,7 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "special-id_123",
       title: '标题 with "quotes" & symbols!',
     });
@@ -120,6 +125,7 @@ describe("reference-parser", () => {
     const result = parseReferences(text);
 
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "whitespace-id",
       title: "带空格的标题",
     });
@@ -161,6 +167,7 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "unicode-测试-🚀",
       title: "包含Unicode的标题 😊 中文",
     });
@@ -176,6 +183,7 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(1);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "id-after-title",
       title: "标题在前",
     });
@@ -194,10 +202,12 @@ describe("reference-parser", () => {
 
     expect(result.references).toHaveLength(2);
     expect(result.references[0]).toEqual({
+      type: "course",
       artifactId: "ref1",
       title: "标题1",
     });
     expect(result.references[1]).toEqual({
+      type: "course",
       artifactId: "ref2",
       title: "标题2",
     });

@@ -9,7 +9,7 @@ export default function Markdown({
   isStreaming?: boolean;
 }) {
   return (
-    <div>
+    <div className="p-4">
       {/* 定义 classname 为 streamdown，这样 globals.css 中的样式会生效 */}
       <Streamdown className="streamdown">{content}</Streamdown>
       {isStreaming && (

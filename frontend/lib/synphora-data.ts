@@ -45,12 +45,19 @@ const testInitialMessages: ChatMessage[] = [
         text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。
         <references>
           <reference>
+            <type>COURSE</type>
             <artifactId>dynamic-programming-basics</artifactId>
             <title>动态规划基础</title>
           </reference>
           <reference>
+            <type>COURSE</type>
             <artifactId>two-dimensional-dynamic-programming</artifactId>
             <title>二维动态规划的解法</title>
+          </reference>
+          <reference>
+            <type>MIND_MAP</type>
+            <artifactId>mindmap-1</artifactId>
+            <title>思维导图</title>
           </reference>
         </references>`,
       },
@@ -99,12 +106,25 @@ const testArtifacts: ArtifactData[] = [
     type: ArtifactType.MIND_MAP,
     title: "思维导图",
     content: `
+---
+title: markmap
+markmap:
+  colorFreezeLevel: 2
+---
+
 # 动态规划
+
+## 解题四步骤
 
 + 定义子问题
 + 写出子问题的递推关系
 + 确定 DP 数组的计算顺序
-+ 空间优化（可选）1
++ 空间优化（可选）
+
+## 二维动态规划
+
++ 二维子问题
++ 二维 DP 数组
 `,
   },
   {

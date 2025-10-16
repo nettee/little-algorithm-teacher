@@ -47,7 +47,7 @@ export const ArtifactDetail = ({
           />
         </ArtifactActions>
       </ArtifactHeader>
-      <ArtifactContent className="h-full">
+      <ArtifactContent className="p-0 h-full">
         {artifact.type === ArtifactType.MIND_MAP ? (
           <MindMap content={artifact.content} />
         ) : (

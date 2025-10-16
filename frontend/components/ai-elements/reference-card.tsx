@@ -1,17 +1,30 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { BookOpenIcon, ChevronRightIcon } from 'lucide-react';
+import { BookOpenIcon, ChevronRightIcon, BrainIcon } from 'lucide-react';
 import { type ComponentProps } from 'react';
+import { ReferenceType } from '@/lib/types';
 
 export type ReferenceCardProps = ComponentProps<'div'> & {
   title: string;
   artifactId: string;
+  type?: ReferenceType;
   description?: string;
   onClick?: () => void;
 };
 
+const getReferenceIcon = (type: ReferenceType) => {
+  switch (type) {
+    case ReferenceType.MIND_MAP:
+      return BrainIcon;
+    case ReferenceType.COURSE:
+    default:
+      return BookOpenIcon;
+  }
+};
+
 export const ReferenceCard = ({
+  type = ReferenceType.COURSE,
   title,
   artifactId,
   description,
@@ -19,6 +32,8 @@ export const ReferenceCard = ({
   className,
   ...props
 }: ReferenceCardProps) => {
+  const IconComponent = getReferenceIcon(type);
+  
   return (
     <div
       className={cn(
@@ -31,7 +46,7 @@ export const ReferenceCard = ({
     >
       {/* 左侧图标 */}
       <div className="flex-shrink-0">
-        <BookOpenIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <IconComponent className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
       </div>
       
       {/* 中间内容区域 */}
@@ -64,9 +79,10 @@ export type ReferenceCardsProps = ComponentProps<'div'> & {
   references: Array<{
     title: string;
     artifactId: string;
+    type?: ReferenceType;
     description?: string;
   }>;
-  onReferenceClick?: (reference: { title: string; artifactId: string; description?: string }) => void;
+  onReferenceClick?: (reference: { title: string; artifactId: string; type?: ReferenceType; description?: string }) => void;
 };
 
 export const ReferenceCards = ({
@@ -90,6 +106,7 @@ export const ReferenceCards = ({
       {references.map((reference, index) => (
         <ReferenceCard
           key={index}
+          type={reference.type}
           title={reference.title}
           artifactId={reference.artifactId}
           description={reference.description}

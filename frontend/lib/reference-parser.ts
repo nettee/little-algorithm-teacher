@@ -1,4 +1,4 @@
-import { Reference } from './types';
+import { Reference, ReferenceType } from './types';
 
 /**
  * 清理文本中的 <references> 标记。
@@ -37,19 +37,42 @@ export function parseReferences(text: string): {
   while ((match = referenceRegex.exec(text)) !== null) {
     const referenceContent = match[1];
     
-    // 在 reference 内容中查找 artifactId 和 title，不要求特定顺序
+    // 在 reference 内容中查找 type、artifactId 和 title，不要求特定顺序
     // 使用更严格的正则表达式，不允许嵌套标签
+    const typeMatch = referenceContent.match(/<type>([^<]+)<\/type>/);
     const artifactIdMatch = referenceContent.match(/<artifactId>([^<]+)<\/artifactId>/);
     const titleMatch = referenceContent.match(/<title>([^<]+)<\/title>/);
     
-    // 只有当两个标签都存在且内容不为空时才创建引用对象
+    // artifactId 和 title 是必需的，type 是可选的（向后兼容）
     if (artifactIdMatch && titleMatch) {
       const artifactId = artifactIdMatch[1].trim();
       const title = titleMatch[1].trim();
       
       // 只有当 artifactId 和 title 都不为空时才添加引用
       if (artifactId && title) {
+        let referenceType: ReferenceType = ReferenceType.COURSE;
+
+        // 如果有 type 字段，则解析它
+        if (typeMatch) {
+          const type = typeMatch[1].trim();
+          if (type) {
+            switch (type.toUpperCase()) {
+              case 'COURSE':
+                referenceType = ReferenceType.COURSE;
+                break;
+              case 'MIND_MAP':
+                referenceType = ReferenceType.MIND_MAP;
+                break;
+              default:
+                // 如果类型不匹配，使用默认类型或跳过
+                referenceType = ReferenceType.COURSE; // 默认为 COURSE 类型
+                break;
+            }
+          }
+        }
+        
         const reference: Reference = {
+          type: referenceType,
           artifactId: artifactId,
           title: title,
         };

@@ -6,8 +6,13 @@ export interface MessagePart {
   references?: Reference[];
 }
 
-// 引用类型定义 - 引用的是 artifact 列表中的项目
+export enum ReferenceType {
+  COURSE = 'course',
+  MIND_MAP = 'mind_map',
+}
+
 export interface Reference {
+  type: ReferenceType;
   artifactId: string;
   title: string;
   description?: string;

@@ -110,14 +110,11 @@ export default function MindMap({ content }: { content: string }) {
   return (
     <React.Fragment>
       {/* 主容器：添加 ref 用于监听尺寸变化 */}
-      <div ref={refContainer} className="h-full flex flex-col border-1 border-gray-200 rounded-lg">
+      <div ref={refContainer} className="h-full flex flex-col">
         {/* SVG 画布：flex-1 让它占据剩余空间 */}
         <svg className="flex-1" ref={refSvg} />
-        
         {/* 底部工具栏区域 */}
-        <div className="flex justify-between items-center border-t-1 p-2">
-          <p>思维导图</p>
-          {/* 工具栏容器：放置缩放、适应等操作按钮 */}
+        <div className="flex justify-end items-center p-2">
           <div className="" ref={refToolbar}></div>
         </div>
       </div>
