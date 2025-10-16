@@ -5,6 +5,7 @@ import {
   ArtifactType,
   ChatMessage,
   MessageRole,
+  ToolCallStatus,
 } from "./types";
 
 const initialMessages: ChatMessage[] = [
@@ -37,7 +38,49 @@ const testInitialMessages: ChatMessage[] = [
     parts: [{ type: "text", text: "动态规划怎么解？" }],
   },
   {
-    id: "4",
+    id: "3",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "text",
+        text: "让我查找一些相关文章",
+      },
+    ],
+  },
+  {
+    id: "tool-1",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "tool",
+        text: "",
+        toolCall: {
+          id: "tool-1",
+          status: ToolCallStatus.COMPLETED,
+          name: "查询文章列表",
+          arguments: {},
+        },
+      },
+    ],
+  },
+  {
+    id: "tool-2",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "tool",
+        text: "",
+        toolCall: {
+          id: "tool-2",
+          status: ToolCallStatus.RUNNING,
+          name: "查询文章内容",
+          arguments: {},
+        },
+      }
+    ],
+  },
+  {
+    id: "5",
     role: MessageRole.ASSISTANT,
     parts: [
       {

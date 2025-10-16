@@ -220,6 +220,10 @@ class AlgorithmTeacherTool:
         print(f'generate_mind_map_artifact start, text: {len(text)} characters')
 
         # TODO mock
+        import time
+
+        time.sleep(6)
+
         title = "动态规划解题思路"
         content = """
 # 动态规划

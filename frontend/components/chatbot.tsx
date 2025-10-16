@@ -31,8 +31,9 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
+import { SimpleTool } from "@/components/ai-elements/simple-tool";
 import { cleanReferences, parseReferences } from "@/lib/reference-parser";
-import { ChatMessage, ChatStatus, MessageRole } from "@/lib/types";
+import { ChatMessage, ChatStatus, MessageRole, ToolCallStatus } from "@/lib/types";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
@@ -99,8 +100,8 @@ export const Chatbot = ({
 
     setStatus("submitted");
 
-    let currentMessageId = "";
-    let currentContent = "";
+  let currentMessageId = "";
+  let currentContent = "";
 
     try {
       await fetchEventSource("http://127.0.0.1:8000/agent", {
@@ -197,6 +198,62 @@ export const Chatbot = ({
                 case "ARTIFACT_LIST_UPDATED":
                   console.log("Artifact list updated:", eventData.data);
                   onArtifactListUpdated();
+                  break;
+
+                case "TOOL_CALL_START":
+                  const { tool_call_id: startToolCallId, tool_name: startToolName, arguments: toolArguments } = eventData.data;
+                  console.log("Tool call start:", eventData.data);
+                  
+                  // 为工具调用创建独立的消息
+                  const toolCallMessage: ChatMessage = {
+                    id: startToolCallId, // 使用 tool_call_id 作为消息 ID
+                    role: MessageRole.ASSISTANT,
+                    parts: [
+                      {
+                        type: "tool",
+                        text: "",
+                        toolCall: {
+                          id: startToolCallId,
+                          status: ToolCallStatus.RUNNING,
+                          name: startToolName,
+                          arguments: toolArguments,
+                        },
+                      },
+                    ],
+                  };
+                  
+                  setMessages((prev) => [...prev, toolCallMessage]);
+                  break;
+
+                case "TOOL_CALL_END":
+                  const { tool_call_id: endToolCallId, tool_name: endToolName, result: toolResult } = eventData.data;
+                  console.log("Tool call end:", eventData.data);
+                  
+                  // 更新对应的工具调用消息状态为完成
+                  setMessages((prev) => {
+                    return prev.map((msg) => {
+                      if (msg.id === endToolCallId && msg.role === MessageRole.ASSISTANT) {
+                        return {
+                          ...msg,
+                          parts: msg.parts.map((part) => {
+                            if (part.type === "tool" && part.toolCall?.id === endToolCallId && part.toolCall) {
+                              return {
+                                ...part,
+                                toolCall: {
+                                  id: part.toolCall.id,
+                                  name: part.toolCall.name,
+                                  arguments: part.toolCall.arguments,
+                                  status: ToolCallStatus.COMPLETED,
+                                },
+                              };
+                            }
+                            return part;
+                          }),
+                        };
+                      }
+                      return msg;
+                    });
+                  });
                   break;
               }
             }
@@ -338,6 +395,36 @@ export const Chatbot = ({
                         <ReasoningTrigger />
                         <ReasoningContent>{part.text}</ReasoningContent>
                       </Reasoning>
+                    );
+                  case "tool":
+                    const { toolCall } = part;
+                    if (!toolCall) {
+                      return null;
+                    }
+
+                    const toolCallTitle = (() => {
+                      switch (toolCall.name) {
+                        case "list_articles":
+                          return "查询文章";
+                        case "read_article":
+                          return "读取文章";
+                        case "generate_mind_map_artifact":
+                          return "生成思维导图";
+                        default:
+                          return toolCall.name;
+                      }
+                    })();
+
+                    const toolCallDescription = "";
+
+                    return (
+                      <SimpleTool
+                        key={`${message.id}-${i}`}
+                        status={toolCall.status}
+                        title={toolCallTitle}
+                        description={toolCallDescription}
+                        className="mb-2"
+                      />
                     );
                   default:
                     return null;

@@ -1,6 +1,7 @@
 from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from synphora.models import ArtifactData
 
@@ -13,6 +14,8 @@ class EventType(Enum):
     ARTIFACT_CONTENT_START = "ARTIFACT_CONTENT_START"
     ARTIFACT_CONTENT_CHUNK = "ARTIFACT_CONTENT_CHUNK"
     ARTIFACT_CONTENT_COMPLETE = "ARTIFACT_CONTENT_COMPLETE"
+    TOOL_CALL_START = "TOOL_CALL_START"
+    TOOL_CALL_END = "TOOL_CALL_END"
 
 
 class SseEvent(BaseModel):
@@ -148,3 +151,47 @@ class ArtifactContentCompleteEvent(SseEvent):
     @classmethod
     def new(cls, artifact_id: str) -> "ArtifactContentCompleteEvent":
         return cls(data=ArtifactContentCompleteData(artifact_id=artifact_id))
+
+
+class ToolCallStartData(BaseModel):
+    tool_call_id: str
+    tool_name: str
+    arguments: dict = Field(repr=False)
+
+
+class ToolCallStartEvent(SseEvent):
+    data: ToolCallStartData
+
+    def __init__(self, **kwargs):
+        super().__init__(type=EventType.TOOL_CALL_START, **kwargs)
+
+    @classmethod
+    def new(
+        cls, tool_call_id: str, tool_name: str, arguments: dict
+    ) -> "ToolCallStartEvent":
+        return cls(
+            data=ToolCallStartData(
+                tool_call_id=tool_call_id, tool_name=tool_name, arguments=arguments
+            )
+        )
+
+
+class ToolCallEndData(BaseModel):
+    tool_call_id: str
+    tool_name: str
+    result: Any = Field(repr=False)
+
+
+class ToolCallEndEvent(SseEvent):
+    data: ToolCallEndData
+
+    def __init__(self, **kwargs):
+        super().__init__(type=EventType.TOOL_CALL_END, **kwargs)
+
+    @classmethod
+    def new(cls, tool_call_id: str, tool_name: str, result: Any) -> "ToolCallEndEvent":
+        return cls(
+            data=ToolCallEndData(
+                tool_call_id=tool_call_id, tool_name=tool_name, result=result
+            )
+        )

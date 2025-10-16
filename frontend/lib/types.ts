@@ -1,9 +1,22 @@
 // 定义消息类型
 export interface MessagePart {
-  type: 'text' | 'reasoning' | 'source-url' | 'reference';
+  type: 'text' | 'reasoning' | 'source-url' | 'reference' | 'tool';
   text: string;
   url?: string;
   references?: Reference[];
+  toolCall?: ToolCall;
+}
+
+export enum ToolCallStatus {
+  RUNNING = 'running',
+  COMPLETED = 'completed',
+}
+
+export interface ToolCall {
+  id: string;
+  status: ToolCallStatus;
+  name: string;
+  arguments: any;
 }
 
 export enum ReferenceType {

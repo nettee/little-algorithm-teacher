@@ -23,6 +23,8 @@ from synphora.sse import (
     RunStartedEvent,
     SseEvent,
     TextMessageEvent,
+    ToolCallEndEvent,
+    ToolCallStartEvent,
 )
 from synphora.tool import AlgorithmTeacherTool
 
@@ -167,6 +169,67 @@ def end_node(state: AgentState) -> AgentState:
     return state
 
 
+class CustomToolNode(ToolNode):
+    """自定义工具节点，继承自 ToolNode，添加工具调用事件拦截"""
+
+    def __init__(self, tools, **kwargs):
+        super().__init__(tools, **kwargs)
+
+    def _send_tool_call_start_events(self, state):
+        """发送工具调用开始事件"""
+        messages = state["messages"]
+        last_message = messages[-1]
+
+        # 发送工具调用开始事件
+        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            for tool_call in last_message.tool_calls:
+                event = ToolCallStartEvent.new(
+                    tool_call_id=tool_call["id"],
+                    tool_name=tool_call["name"],
+                    arguments=tool_call["args"],
+                )
+                write_sse_event(event)
+
+    def _send_tool_call_end_events(self, state, result):
+        """发送工具调用结束事件"""
+        messages = state["messages"]
+        last_message = messages[-1]
+
+        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            # 获取工具执行结果
+            result_messages = result["messages"]
+            tool_result_message = result_messages[-1]  # 最后一条消息应该是工具结果
+
+            for tool_call in last_message.tool_calls:
+                # 尝试从工具结果消息中提取对应的结果
+                tool_result = ""
+                if hasattr(tool_result_message, 'content'):
+                    tool_result = tool_result_message.content
+                elif hasattr(tool_result_message, 'tool_calls'):
+                    # 如果是工具调用结果消息，可能需要不同的处理方式
+                    tool_result = str(tool_result_message)
+
+                event = ToolCallEndEvent.new(
+                    tool_call_id=tool_call["id"],
+                    tool_name=tool_call["name"],
+                    result=tool_result,
+                )
+                write_sse_event(event)
+
+    def invoke(self, state, config=None):
+        self._send_tool_call_start_events(state)
+        result = super().invoke(state, config)
+        self._send_tool_call_end_events(state, result)
+
+        return result
+
+    async def ainvoke(self, state, config=None):
+        self._send_tool_call_start_events(state)
+        result = await super().ainvoke(state, config)
+        self._send_tool_call_end_events(state, result)
+        return result
+
+
 def build_agent_graph() -> StateGraph:
     """构建LangGraph代理图 - 标准 re-act 模式"""
     graph = StateGraph(AgentState)
@@ -174,7 +237,7 @@ def build_agent_graph() -> StateGraph:
     # 添加节点
     graph.add_node(NodeType.FIRST, start_node)
     graph.add_node(NodeType.REASON, reason_node)
-    graph.add_node(NodeType.ACT, ToolNode(tools, handle_tool_errors=False))
+    graph.add_node(NodeType.ACT, CustomToolNode(tools, handle_tool_errors=False))
     graph.add_node(NodeType.LAST, end_node)
 
     # 连接节点 - re-act 模式
