@@ -25,14 +25,17 @@ import {
 } from "@/components/ai-elements/reasoning";
 import { ReferenceCards } from "@/components/ai-elements/reference-card";
 import { Response } from "@/components/ai-elements/response";
+import { ToolCall } from "@/components/ai-elements/simple-tool";
 import {
   Source,
   Sources,
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { SimpleTool } from "@/components/ai-elements/simple-tool";
-import { cleanReferences, parseReferences, splitTextByReferences } from "@/lib/reference-parser";
+import {
+  parseReferences,
+  splitTextByReferences
+} from "@/lib/reference-parser";
 import {
   ChatMessage,
   ChatStatus,
@@ -58,9 +61,6 @@ const models = [
     label: "Gemini 2.5 Flash",
   },
 ];
-
-const showDebugInfo: boolean =
-  process.env.NEXT_PUBLIC_SHOW_DEBUG_INFO === "true";
 
 export const Chatbot = ({
   initialMessages = [],
@@ -363,6 +363,57 @@ export const Chatbot = ({
     );
   };
 
+  const renderReference = (key: string, part: MessagePart) => {
+    const { references } = part;
+    if (!references) {
+      return null;
+    }
+    return (
+      <div key={key}>
+        <ReferenceCards
+          references={references}
+          onReferenceClick={(r) => {
+            if (onArtifactNavigate) {
+              onArtifactNavigate(r.artifactId);
+            }
+          }}
+        />
+      </div>
+    );
+  };
+
+  const renderToolCall = (key: string, part: MessagePart) => {
+    const { toolCall } = part;
+    if (!toolCall) {
+      return null;
+    }
+
+    const toolCallTitle = (() => {
+      switch (toolCall.name) {
+        case "list_articles":
+          return "查询文章";
+        case "read_article":
+          return "读取文章";
+        case "generate_mind_map_artifact":
+          return "生成思维导图";
+        default:
+          return toolCall.name;
+      }
+    })();
+
+    const toolCallDescription = "";
+
+    return (
+      <ToolCall
+        key={key}
+        status={toolCall.status}
+        title={toolCallTitle}
+        description={toolCallDescription}
+        className="mb-2"
+      />
+    );
+  };
+
   const renderMessagePart = (
     message: ChatMessage,
     part: MessagePart,
@@ -377,14 +428,11 @@ export const Chatbot = ({
 
     switch (part.type) {
       case "text":
-        // 检查文本是否包含 reference 标记
         return (
           <Fragment key={key}>
             <Message from={message.role}>
               <MessageContent>
-                <Response>
-                  {part.text}
-                </Response>
+                <Response>{part.text}</Response>
               </MessageContent>
             </Message>
             {isLastAssistantMessage && (
@@ -410,52 +458,9 @@ export const Chatbot = ({
           </Reasoning>
         );
       case "reference":
-        const { references: references2 } = part;
-        if (!references2) {
-          return null;
-        }
-        return (
-          <div key={key}>
-            <ReferenceCards
-                  references={references2}
-                  onReferenceClick={(r) => {
-                    if (onArtifactNavigate) {
-                      onArtifactNavigate(r.artifactId);
-                    }
-                  }}
-                />
-          </div>
-        );
+        return renderReference(key, part);
       case "tool":
-        const { toolCall } = part;
-        if (!toolCall) {
-          return null;
-        }
-
-        const toolCallTitle = (() => {
-          switch (toolCall.name) {
-            case "list_articles":
-              return "查询文章";
-            case "read_article":
-              return "读取文章";
-            case "generate_mind_map_artifact":
-              return "生成思维导图";
-            default:
-              return toolCall.name;
-          }
-        })();
-
-        const toolCallDescription = "";
-
-        return (
-          <SimpleTool
-            key={key}
-            status={toolCall.status}
-            title={toolCallTitle}
-            description={toolCallDescription}
-            className="mb-2"
-          />
-        );
+        return renderToolCall(key, part);
       default:
         return null;
     }
@@ -466,10 +471,13 @@ export const Chatbot = ({
       return [part];
     }
 
-    if (part.text.includes('<references>')) {
+    if (part.text.includes("<references>")) {
       const textParts = splitTextByReferences(part.text);
       return textParts.map((textPart) => {
-        if (textPart.type === 'complete-references' || textPart.type === 'incomplete-references') {
+        if (
+          textPart.type === "complete-references" ||
+          textPart.type === "incomplete-references"
+        ) {
           return {
             type: "reference",
             text: "",
@@ -503,7 +511,9 @@ export const Chatbot = ({
     return (
       <div key={transformedMessage.id}>
         {renderMessageSource(transformedMessage)}
-        {transformedMessage.parts.map((part, i) => renderMessagePart(transformedMessage, part, i))}
+        {transformedMessage.parts.map((part, i) =>
+          renderMessagePart(transformedMessage, part, i)
+        )}
       </div>
     );
   };
