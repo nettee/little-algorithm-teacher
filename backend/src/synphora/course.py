@@ -42,9 +42,7 @@ class CourseManager:
 
     def get_course(self, artifact_id: str) -> Course:
         """根据 artifact_id 获取课程"""
-        if artifact_id not in self.courses_map:
-            raise ValueError(f"Course with artifact_id {artifact_id} not found")
-        return self.courses_map[artifact_id]
+        return self.courses_map.get(artifact_id)
 
     def read_course_content(self, artifact_id: str) -> str:
         """根据 artifact_id 读取课程内容"""

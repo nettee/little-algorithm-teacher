@@ -188,9 +188,12 @@ class AlgorithmTeacherTool:
 
     @staticmethod
     @tool
-    def list_articles() -> str:
+    def list_articles(tag: str) -> str:
         """
-        列出所有文章，返回内容为 JSON 格式，包括文章标题、slug、标签、摘要等。
+        查询文章元信息列表。
+        参数：
+        - tag: 文章标签，可选取值为："链表", "二叉树", "动态规划"，如果为空，则查询所有文章。
+        返回内容为 JSON 格式，包括文章标题、slug、标签、摘要等。
         """
 
         courses = AlgorithmTeacherTool.COURSE_MANAGER.list_courses()
@@ -220,9 +223,9 @@ class AlgorithmTeacherTool:
         print(f'generate_mind_map_artifact start, text: {len(text)} characters')
 
         # TODO mock
-        import time
+        # import time
 
-        time.sleep(6)
+        # time.sleep(6)
 
         title = "动态规划解题思路"
         content = """

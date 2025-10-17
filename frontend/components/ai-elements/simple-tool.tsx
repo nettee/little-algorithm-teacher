@@ -36,15 +36,15 @@ export const ToolCall = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 py-2 text-sm text-muted-foreground",
+        "flex items-center gap-3 py-2 text-muted-foreground",
         className
       )}
       {...props}
     >
       <div className="flex-shrink-0">{getStatusIcon()}</div>
       <div className="flex-1 min-w-0">
-        <span className="font-medium">{title}</span>
-        {description && <span className="ml-2">{description}</span>}
+        <span className="font-medium text-sm">{title}</span>
+        {description && <span className="ml-2 text-[0.825rem]">{description}</span>}
       </div>
     </div>
   );

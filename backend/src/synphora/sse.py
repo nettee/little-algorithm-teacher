@@ -1,7 +1,6 @@
 from enum import Enum
-from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from synphora.models import ArtifactData
 
@@ -156,7 +155,7 @@ class ArtifactContentCompleteEvent(SseEvent):
 class ToolCallStartData(BaseModel):
     tool_call_id: str
     tool_name: str
-    arguments: dict = Field(repr=False)
+    attributes: dict
 
 
 class ToolCallStartEvent(SseEvent):
@@ -167,11 +166,11 @@ class ToolCallStartEvent(SseEvent):
 
     @classmethod
     def new(
-        cls, tool_call_id: str, tool_name: str, arguments: dict
+        cls, tool_call_id: str, tool_name: str, attributes: dict
     ) -> "ToolCallStartEvent":
         return cls(
             data=ToolCallStartData(
-                tool_call_id=tool_call_id, tool_name=tool_name, arguments=arguments
+                tool_call_id=tool_call_id, tool_name=tool_name, attributes=attributes
             )
         )
 
@@ -179,7 +178,7 @@ class ToolCallStartEvent(SseEvent):
 class ToolCallEndData(BaseModel):
     tool_call_id: str
     tool_name: str
-    result: Any = Field(repr=False)
+    attributes: dict
 
 
 class ToolCallEndEvent(SseEvent):
@@ -189,9 +188,11 @@ class ToolCallEndEvent(SseEvent):
         super().__init__(type=EventType.TOOL_CALL_END, **kwargs)
 
     @classmethod
-    def new(cls, tool_call_id: str, tool_name: str, result: Any) -> "ToolCallEndEvent":
+    def new(
+        cls, tool_call_id: str, tool_name: str, attributes: dict
+    ) -> "ToolCallEndEvent":
         return cls(
             data=ToolCallEndData(
-                tool_call_id=tool_call_id, tool_name=tool_name, result=result
+                tool_call_id=tool_call_id, tool_name=tool_name, attributes=attributes
             )
         )

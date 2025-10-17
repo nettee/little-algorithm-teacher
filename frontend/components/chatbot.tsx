@@ -222,7 +222,7 @@ export const Chatbot = ({
                   const {
                     tool_call_id: startToolCallId,
                     tool_name: startToolName,
-                    arguments: toolArguments,
+                    attributes: startAttributes,
                   } = eventData.data;
                   console.log("Tool call start:", eventData.data);
 
@@ -236,9 +236,9 @@ export const Chatbot = ({
                         text: "",
                         toolCall: {
                           id: startToolCallId,
-                          status: ToolCallStatus.RUNNING,
                           name: startToolName,
-                          arguments: toolArguments,
+                          attributes: startAttributes,
+                          status: ToolCallStatus.RUNNING,
                         },
                       },
                     ],
@@ -251,7 +251,7 @@ export const Chatbot = ({
                   const {
                     tool_call_id: endToolCallId,
                     tool_name: endToolName,
-                    result: toolResult,
+                    attributes: endAttributes,
                   } = eventData.data;
                   console.log("Tool call end:", eventData.data);
 
@@ -270,12 +270,18 @@ export const Chatbot = ({
                               part.toolCall?.id === endToolCallId &&
                               part.toolCall
                             ) {
+                              // 合并 start 和 end 的 attributes
+                              const mergedAttributes = {
+                                ...part.toolCall.attributes,
+                                ...endAttributes,
+                              };
+
                               return {
                                 ...part,
                                 toolCall: {
                                   id: part.toolCall.id,
                                   name: part.toolCall.name,
-                                  arguments: part.toolCall.arguments,
+                                  attributes: mergedAttributes,
                                   status: ToolCallStatus.COMPLETED,
                                 },
                               };
@@ -388,20 +394,27 @@ export const Chatbot = ({
       return null;
     }
 
-    const toolCallTitle = (() => {
-      switch (toolCall.name) {
-        case "list_articles":
-          return "查询文章";
-        case "read_article":
-          return "读取文章";
-        case "generate_mind_map_artifact":
-          return "生成思维导图";
-        default:
-          return toolCall.name;
-      }
-    })();
+    const attributes = toolCall.attributes;
 
-    const toolCallDescription = "";
+    let toolCallTitle = toolCall.name;
+    let toolCallDescription = "";
+
+    if (toolCall.name === "list_articles") {
+      toolCallTitle = "查询文章";
+      if (attributes) {
+        toolCallDescription = attributes.tag;
+      }
+    } else if (toolCall.name === "read_article") {
+      toolCallTitle = "读取文章";
+      if (attributes) {
+        toolCallDescription = attributes.title;
+      }
+    } else if (toolCall.name === "generate_mind_map_artifact") {
+      toolCallTitle = "生成思维导图";
+      if (attributes) {
+        toolCallDescription = attributes.title;
+      }
+    }
 
     return (
       <ToolCall

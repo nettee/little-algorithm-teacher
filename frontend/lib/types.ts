@@ -14,9 +14,9 @@ export enum ToolCallStatus {
 
 export interface ToolCall {
   id: string;
-  status: ToolCallStatus;
   name: string;
-  arguments: any;
+  attributes?: Record<string, string>;
+  status: ToolCallStatus;
 }
 
 export enum ReferenceType {

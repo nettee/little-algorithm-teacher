@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from collections.abc import AsyncGenerator
@@ -39,10 +40,10 @@ TOOL_TIMEOUT_SECONDS = 60
 class NodeType(str, Enum):
     """代理图节点类型"""
 
-    FIRST = "start"
+    FIRST = "first"
     REASON = "reason"
     ACT = "act"
-    LAST = "end"
+    LAST = "last"
 
 
 class AgentRequest(BaseModel):
@@ -169,11 +170,24 @@ def end_node(state: AgentState) -> AgentState:
     return state
 
 
-class CustomToolNode(ToolNode):
-    """自定义工具节点，继承自 ToolNode，添加工具调用事件拦截"""
+class ActNode(ToolNode):
+    """执行节点，继承自 ToolNode，添加工具调用事件拦截"""
 
     def __init__(self, tools, **kwargs):
         super().__init__(tools, **kwargs)
+
+    def invoke(self, state, config=None):
+        self._send_tool_call_start_events(state)
+        result = super().invoke(state, config)
+        self._send_tool_call_end_events(state, result)
+
+        return result
+
+    async def ainvoke(self, state, config=None):
+        self._send_tool_call_start_events(state)
+        result = await super().ainvoke(state, config)
+        self._send_tool_call_end_events(state, result)
+        return result
 
     def _send_tool_call_start_events(self, state):
         """发送工具调用开始事件"""
@@ -183,11 +197,14 @@ class CustomToolNode(ToolNode):
         # 发送工具调用开始事件
         if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
             for tool_call in last_message.tool_calls:
+                attributes = self._parse_attributes_from_dict(tool_call["args"])
+
                 event = ToolCallStartEvent.new(
                     tool_call_id=tool_call["id"],
                     tool_name=tool_call["name"],
-                    arguments=tool_call["args"],
+                    attributes=attributes,
                 )
+                print(f'send tool call start event: {event}')
                 write_sse_event(event)
 
     def _send_tool_call_end_events(self, state, result):
@@ -209,25 +226,63 @@ class CustomToolNode(ToolNode):
                     # 如果是工具调用结果消息，可能需要不同的处理方式
                     tool_result = str(tool_result_message)
 
+                attributes = self._parse_attributes_from_string(tool_result)
+
                 event = ToolCallEndEvent.new(
                     tool_call_id=tool_call["id"],
                     tool_name=tool_call["name"],
-                    result=tool_result,
+                    attributes=attributes,
                 )
+                print(f'send tool call end event: {event}')
                 write_sse_event(event)
 
-    def invoke(self, state, config=None):
-        self._send_tool_call_start_events(state)
-        result = super().invoke(state, config)
-        self._send_tool_call_end_events(state, result)
+    def _parse_attributes_from_string(self, data: str) -> dict:
+        if not data.startswith('{'):
+            return {}
 
-        return result
+        try:
+            data_json = json.loads(data)
+        except json.JSONDecodeError:
+            return {}
 
-    async def ainvoke(self, state, config=None):
-        self._send_tool_call_start_events(state)
-        result = await super().ainvoke(state, config)
-        self._send_tool_call_end_events(state, result)
-        return result
+        return self._parse_attributes_from_dict(data_json)
+
+    def _parse_attributes_from_dict(self, data: dict) -> dict:
+        if not isinstance(data, dict):
+            return {}
+
+        attributes = {}
+
+        if 'tag' in data:
+            attributes['tag'] = data['tag']
+
+        artifact_id = None
+        if not artifact_id:
+            # try 1
+            artifact_id = data.get('artifact_id')
+        if not artifact_id:
+            # try 2
+            artifact_id = data.get('artifactId')
+
+        if artifact_id:
+            attributes['artifact_id'] = artifact_id
+
+            title = None
+            if not title:
+                # try 1
+                artifact = artifact_manager.get_artifact(artifact_id)
+                if artifact:
+                    title = artifact.title
+            if not title:
+                # try 2
+                course = CourseManager().get_course(artifact_id)
+                if course:
+                    title = course.title
+
+            if title:
+                attributes['title'] = title
+
+        return attributes
 
 
 def build_agent_graph() -> StateGraph:
@@ -237,7 +292,7 @@ def build_agent_graph() -> StateGraph:
     # 添加节点
     graph.add_node(NodeType.FIRST, start_node)
     graph.add_node(NodeType.REASON, reason_node)
-    graph.add_node(NodeType.ACT, CustomToolNode(tools, handle_tool_errors=False))
+    graph.add_node(NodeType.ACT, ActNode(tools, handle_tool_errors=False))
     graph.add_node(NodeType.LAST, end_node)
 
     # 连接节点 - re-act 模式
