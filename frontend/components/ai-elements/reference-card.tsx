@@ -23,6 +23,31 @@ const getReferenceIcon = (type: ReferenceType) => {
   }
 };
 
+const getReferenceColor = (type: ReferenceType) => {
+  switch (type) {
+    case ReferenceType.MIND_MAP:
+      return 'group-hover:text-orange-600';
+    case ReferenceType.COURSE:
+      return 'group-hover:text-green-600';
+    default:
+      return 'group-hover:text-primary';
+  }
+};
+
+const getReferenceDescription = (type: ReferenceType, description?: string) => {
+  if (description) {
+    return description;
+  }
+  switch (type) {
+    case ReferenceType.MIND_MAP:
+      return "思维导图";
+    case ReferenceType.COURSE:
+      return "课程";
+    default:
+      return "";
+  }
+};
+
 export const ReferenceCard = ({
   type = ReferenceType.COURSE,
   title,
@@ -33,6 +58,8 @@ export const ReferenceCard = ({
   ...props
 }: ReferenceCardProps) => {
   const IconComponent = getReferenceIcon(type);
+  const color = getReferenceColor(type);
+  const descriptionText = getReferenceDescription(type, description);
   
   return (
     <div
@@ -46,13 +73,13 @@ export const ReferenceCard = ({
     >
       {/* 左侧图标 */}
       <div className="flex-shrink-0">
-        <IconComponent className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <IconComponent className={cn("h-5 w-5 text-muted-foreground transition-colors", color)} />
       </div>
       
       {/* 中间内容区域 */}
       <div className={cn(
         "flex-1 min-w-0",
-        !description && "flex items-center"
+        !descriptionText && "flex items-center"
       )}>
         {/* 标题 */}
         <h4 className="font-medium text-sm leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
@@ -60,9 +87,9 @@ export const ReferenceCard = ({
         </h4>
         
         {/* 描述 */}
-        {description && (
+        {descriptionText && (
           <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {description}
+            {descriptionText}
           </p>
         )}
       </div>

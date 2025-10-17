@@ -1,4 +1,4 @@
-import { parseReferences, cleanReferences } from "../reference-parser";
+import { parseReferences, cleanReferences, splitTextByReferences } from "../reference-parser";
 
 describe("reference-parser", () => {
   it("应该正确解析单个引用", () => {
@@ -210,6 +210,97 @@ describe("reference-parser", () => {
       type: "course",
       artifactId: "ref2",
       title: "标题2",
+    });
+  });
+
+  describe("splitTextByReferences", () => {
+    it("应该正确拆分包含完整 references 标记的文本", () => {
+      const text = "这是一段文本 <references>引用一</references> 后面还有文本。";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual([
+        "这是一段文本 ",
+        "<references>引用一</references>",
+        " 后面还有文本。"
+      ]);
+    });
+
+    it("应该处理未闭合的 references 标记（流式输出场景）", () => {
+      const text = "这是一段文本 <references>引用一还没结束";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual([
+        "这是一段文本 ",
+        "<references>引用一还没结束"
+      ]);
+    });
+
+    it("应该处理没有 references 标记的文本", () => {
+      const text = "这是一段普通文本，没有任何标记。";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual(["这是一段普通文本，没有任何标记。"]);
+    });
+
+    it("应该处理空字符串", () => {
+      const result = splitTextByReferences("");
+      expect(result).toEqual([""]);
+    });
+
+    it("应该处理多个 references 块", () => {
+      const text = "开始 <references>引用1</references> 中间 <references>引用2</references> 结束";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual([
+        "开始 ",
+        "<references>引用1</references>",
+        " 中间 ",
+        "<references>引用2</references>",
+        " 结束"
+      ]);
+    });
+
+    it("应该处理只有 references 标记的文本", () => {
+      const text = "<references>只有引用内容</references>";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual(["<references>只有引用内容</references>"]);
+    });
+
+    it("应该处理文本开头就是未闭合的 references", () => {
+      const text = "<references>从开头就是引用";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual(["<references>从开头就是引用"]);
+    });
+
+    it("应该处理包含换行符的 references 内容", () => {
+      const text = `前文 <references>
+      多行
+      引用内容
+      </references> 后文`;
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual([
+        "前文 ",
+        `<references>
+      多行
+      引用内容
+      </references>`,
+        " 后文"
+      ]);
+    });
+
+    it("应该处理混合场景：完整和未闭合的 references", () => {
+      const text = "开始 <references>完整引用</references> 中间 <references>未完成引用";
+      const result = splitTextByReferences(text);
+      
+      expect(result).toEqual([
+        "开始 ",
+        "<references>完整引用</references>",
+        " 中间 ",
+        "<references>未完成引用"
+      ]);
     });
   });
 

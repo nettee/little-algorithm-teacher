@@ -32,11 +32,17 @@ import {
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
 import { SimpleTool } from "@/components/ai-elements/simple-tool";
-import { cleanReferences, parseReferences } from "@/lib/reference-parser";
-import { ChatMessage, ChatStatus, MessageRole, ToolCallStatus } from "@/lib/types";
+import { cleanReferences, parseReferences, splitTextByReferences } from "@/lib/reference-parser";
+import {
+  ChatMessage,
+  ChatStatus,
+  MessagePart,
+  MessageRole,
+  ToolCallStatus,
+} from "@/lib/types";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
-import { Fragment, useRef, useState } from "react";
+import React, { Fragment, useRef, useState } from "react";
 
 const models = [
   {
@@ -47,13 +53,14 @@ const models = [
     key: "moonshot/kimi-k2",
     label: "Kimi K2",
   },
-  { 
+  {
     key: "gemini/gemini-2.5-flash",
     label: "Gemini 2.5 Flash",
   },
 ];
 
-const showDebugInfo: boolean = process.env.NEXT_PUBLIC_SHOW_DEBUG_INFO === "true";
+const showDebugInfo: boolean =
+  process.env.NEXT_PUBLIC_SHOW_DEBUG_INFO === "true";
 
 export const Chatbot = ({
   initialMessages = [],
@@ -64,7 +71,11 @@ export const Chatbot = ({
   onArtifactNavigate,
 }: {
   initialMessages: ChatMessage[];
-  onArtifactContentStart: (artifactId: string, title: string, description?: string) => void;
+  onArtifactContentStart: (
+    artifactId: string,
+    title: string,
+    description?: string
+  ) => void;
   onArtifactContentChunk: (artifactId: string, chunk: string) => void;
   onArtifactContentComplete: (artifactId: string) => void;
   onArtifactListUpdated: () => void;
@@ -100,8 +111,8 @@ export const Chatbot = ({
 
     setStatus("submitted");
 
-  let currentMessageId = "";
-  let currentContent = "";
+    let currentMessageId = "";
+    let currentContent = "";
 
     try {
       await fetchEventSource("http://127.0.0.1:8000/agent", {
@@ -178,13 +189,20 @@ export const Chatbot = ({
                   break;
 
                 case "ARTIFACT_CONTENT_START":
-                  const { artifact_id: startArtifactId, title, description } = eventData.data;
+                  const {
+                    artifact_id: startArtifactId,
+                    title,
+                    description,
+                  } = eventData.data;
                   console.log("Artifact content start:", eventData.data);
                   onArtifactContentStart(startArtifactId, title, description);
                   break;
 
                 case "ARTIFACT_CONTENT_CHUNK":
-                  const { artifact_id: chunkArtifactId, content: chunkContent } = eventData.data;
+                  const {
+                    artifact_id: chunkArtifactId,
+                    content: chunkContent,
+                  } = eventData.data;
                   // console.log("Artifact content chunk:", eventData.data);
                   onArtifactContentChunk(chunkArtifactId, chunkContent);
                   break;
@@ -201,9 +219,13 @@ export const Chatbot = ({
                   break;
 
                 case "TOOL_CALL_START":
-                  const { tool_call_id: startToolCallId, tool_name: startToolName, arguments: toolArguments } = eventData.data;
+                  const {
+                    tool_call_id: startToolCallId,
+                    tool_name: startToolName,
+                    arguments: toolArguments,
+                  } = eventData.data;
                   console.log("Tool call start:", eventData.data);
-                  
+
                   // 为工具调用创建独立的消息
                   const toolCallMessage: ChatMessage = {
                     id: startToolCallId, // 使用 tool_call_id 作为消息 ID
@@ -221,22 +243,33 @@ export const Chatbot = ({
                       },
                     ],
                   };
-                  
+
                   setMessages((prev) => [...prev, toolCallMessage]);
                   break;
 
                 case "TOOL_CALL_END":
-                  const { tool_call_id: endToolCallId, tool_name: endToolName, result: toolResult } = eventData.data;
+                  const {
+                    tool_call_id: endToolCallId,
+                    tool_name: endToolName,
+                    result: toolResult,
+                  } = eventData.data;
                   console.log("Tool call end:", eventData.data);
-                  
+
                   // 更新对应的工具调用消息状态为完成
                   setMessages((prev) => {
                     return prev.map((msg) => {
-                      if (msg.id === endToolCallId && msg.role === MessageRole.ASSISTANT) {
+                      if (
+                        msg.id === endToolCallId &&
+                        msg.role === MessageRole.ASSISTANT
+                      ) {
                         return {
                           ...msg,
                           parts: msg.parts.map((part) => {
-                            if (part.type === "tool" && part.toolCall?.id === endToolCallId && part.toolCall) {
+                            if (
+                              part.type === "tool" &&
+                              part.toolCall?.id === endToolCallId &&
+                              part.toolCall
+                            ) {
                               return {
                                 ...part,
                                 toolCall: {
@@ -302,136 +335,187 @@ export const Chatbot = ({
     }
   };
 
+  const renderMessageSource = (message: ChatMessage) => {
+    if (message.role !== MessageRole.ASSISTANT) {
+      return null;
+    }
+
+    const sourceParts = message.parts.filter(
+      (part) => part.type === "source-url"
+    );
+    if (sourceParts.length === 0) {
+      return null;
+    }
+
+    return (
+      <Sources>
+        <SourcesTrigger count={sourceParts.length} />
+        {sourceParts.map((part, i) => (
+          <SourcesContent key={`${message.id}-${i}`}>
+            <Source
+              key={`${message.id}-${i}`}
+              href={part.url}
+              title={part.url}
+            />
+          </SourcesContent>
+        ))}
+      </Sources>
+    );
+  };
+
+  const renderMessagePart = (
+    message: ChatMessage,
+    part: MessagePart,
+    i: number
+  ): React.ReactNode => {
+    const key = `${message.id}-${i}`;
+    const isLastMessage =
+      i === message.parts.length - 1 && message.id === messages.at(-1)?.id;
+    const isLastAssistantMessage =
+      message.role === MessageRole.ASSISTANT && isLastMessage;
+    const isStreaming = status === "streaming" && isLastMessage;
+
+    switch (part.type) {
+      case "text":
+        // 检查文本是否包含 reference 标记
+        return (
+          <Fragment key={key}>
+            <Message from={message.role}>
+              <MessageContent>
+                <Response>
+                  {part.text}
+                </Response>
+              </MessageContent>
+            </Message>
+            {isLastAssistantMessage && (
+              <Actions className="mt-2">
+                <Action onClick={() => regenerate()} label="Retry">
+                  <RefreshCcwIcon className="size-3" />
+                </Action>
+                <Action
+                  onClick={() => navigator.clipboard.writeText(part.text)}
+                  label="Copy"
+                >
+                  <CopyIcon className="size-3" />
+                </Action>
+              </Actions>
+            )}
+          </Fragment>
+        );
+      case "reasoning":
+        return (
+          <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
+            <ReasoningTrigger />
+            <ReasoningContent>{part.text}</ReasoningContent>
+          </Reasoning>
+        );
+      case "reference":
+        const { references: references2 } = part;
+        if (!references2) {
+          return null;
+        }
+        return (
+          <div key={key}>
+            <ReferenceCards
+                  references={references2}
+                  onReferenceClick={(r) => {
+                    if (onArtifactNavigate) {
+                      onArtifactNavigate(r.artifactId);
+                    }
+                  }}
+                />
+          </div>
+        );
+      case "tool":
+        const { toolCall } = part;
+        if (!toolCall) {
+          return null;
+        }
+
+        const toolCallTitle = (() => {
+          switch (toolCall.name) {
+            case "list_articles":
+              return "查询文章";
+            case "read_article":
+              return "读取文章";
+            case "generate_mind_map_artifact":
+              return "生成思维导图";
+            default:
+              return toolCall.name;
+          }
+        })();
+
+        const toolCallDescription = "";
+
+        return (
+          <SimpleTool
+            key={key}
+            status={toolCall.status}
+            title={toolCallTitle}
+            description={toolCallDescription}
+            className="mb-2"
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const transformMessagePart = (part: MessagePart): MessagePart[] => {
+    if (part.type !== "text") {
+      return [part];
+    }
+
+    if (part.text.includes('<references>')) {
+      const textParts = splitTextByReferences(part.text);
+      return textParts.map((textPart) => {
+        if (textPart.type === 'complete-references' || textPart.type === 'incomplete-references') {
+          return {
+            type: "reference",
+            text: "",
+            references: parseReferences(textPart.text).references,
+          };
+        } else {
+          return {
+            type: "text",
+            text: textPart.text,
+          };
+        }
+      });
+    } else {
+      return [part];
+    }
+  };
+
+  const transformMessage = (message: ChatMessage): ChatMessage => {
+    let resultParts: MessagePart[] = [];
+    for (const part of message.parts) {
+      resultParts.push(...transformMessagePart(part));
+    }
+    return {
+      ...message,
+      parts: resultParts,
+    };
+  };
+
+  const renderMessage = (message: ChatMessage) => {
+    const transformedMessage = transformMessage(message);
+    return (
+      <div key={transformedMessage.id}>
+        {renderMessageSource(transformedMessage)}
+        {transformedMessage.parts.map((part, i) => renderMessagePart(transformedMessage, part, i))}
+      </div>
+    );
+  };
+
   return (
-    <div data-role="chatbot" className="w-full max-w-3xl min-h-0 flex-1 mx-auto flex flex-col">
+    <div
+      data-role="chatbot"
+      className="w-full max-w-3xl min-h-0 flex-1 mx-auto flex flex-col"
+    >
       <Conversation className="flex-1 min-h-0">
         <ConversationContent>
-          {messages.map((message) => (
-            <div key={message.id}>
-              {message.role === MessageRole.ASSISTANT &&
-                message.parts.filter((part) => part.type === "source-url")
-                  .length > 0 && (
-                  <Sources>
-                    <SourcesTrigger
-                      count={
-                        message.parts.filter(
-                          (part) => part.type === "source-url"
-                        ).length
-                      }
-                    />
-                    {message.parts
-                      .filter((part) => part.type === "source-url")
-                      .map((part, i) => (
-                        <SourcesContent key={`${message.id}-${i}`}>
-                          <Source
-                            key={`${message.id}-${i}`}
-                            href={part.url}
-                            title={part.url}
-                          />
-                        </SourcesContent>
-                      ))}
-                  </Sources>
-                )}
-              {message.parts.map((part, i) => {
-                switch (part.type) {
-                  case "text":
-                    // 检查文本是否包含 reference 标记
-                    const { references } = parseReferences(part.text);
-                    const hasRefs = references.length > 0;
-                    
-                    return (
-                      <Fragment key={`${message.id}-${i}`}>
-                        <Message from={message.role}>
-                          <MessageContent>
-                            <Response>{showDebugInfo ? part.text : cleanReferences(part.text)}</Response>
-                          </MessageContent>
-                        </Message>
-                        {/* 如果文本中有 reference 标记，渲染 reference cards */}
-                        {hasRefs && (
-                          <div className="mt-4">
-                            <ReferenceCards
-                              references={references}
-                              onReferenceClick={(reference) => {
-                                if (onArtifactNavigate) {
-                                  onArtifactNavigate(reference.artifactId);
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                        {message.role === MessageRole.ASSISTANT &&
-                          i === message.parts.length - 1 &&
-                          message.id === messages.at(-1)?.id && (
-                            <Actions className="mt-2">
-                              <Action
-                                onClick={() => regenerate()}
-                                label="Retry"
-                              >
-                                <RefreshCcwIcon className="size-3" />
-                              </Action>
-                              <Action
-                                onClick={() =>
-                                  navigator.clipboard.writeText(part.text)
-                                }
-                                label="Copy"
-                              >
-                                <CopyIcon className="size-3" />
-                              </Action>
-                            </Actions>
-                          )}
-                      </Fragment>
-                    );
-                  case "reasoning":
-                    return (
-                      <Reasoning
-                        key={`${message.id}-${i}`}
-                        className="w-full"
-                        isStreaming={
-                          status === "streaming" &&
-                          i === message.parts.length - 1 &&
-                          message.id === messages.at(-1)?.id
-                        }
-                      >
-                        <ReasoningTrigger />
-                        <ReasoningContent>{part.text}</ReasoningContent>
-                      </Reasoning>
-                    );
-                  case "tool":
-                    const { toolCall } = part;
-                    if (!toolCall) {
-                      return null;
-                    }
-
-                    const toolCallTitle = (() => {
-                      switch (toolCall.name) {
-                        case "list_articles":
-                          return "查询文章";
-                        case "read_article":
-                          return "读取文章";
-                        case "generate_mind_map_artifact":
-                          return "生成思维导图";
-                        default:
-                          return toolCall.name;
-                      }
-                    })();
-
-                    const toolCallDescription = "";
-
-                    return (
-                      <SimpleTool
-                        key={`${message.id}-${i}`}
-                        status={toolCall.status}
-                        title={toolCallTitle}
-                        description={toolCallDescription}
-                        className="mb-2"
-                      />
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </div>
-          ))}
+          {messages.map((message) => renderMessage(message))}
           {status === "submitted" && <Loader />}
         </ConversationContent>
         <ConversationScrollButton />
@@ -467,10 +551,7 @@ export const Chatbot = ({
               </PromptInputModelSelectTrigger>
               <PromptInputModelSelectContent>
                 {models.map((model) => (
-                  <PromptInputModelSelectItem
-                    key={model.key}
-                    value={model.key}
-                  >
+                  <PromptInputModelSelectItem key={model.key} value={model.key}>
                     {model.label}
                   </PromptInputModelSelectItem>
                 ))}

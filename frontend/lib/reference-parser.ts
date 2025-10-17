@@ -1,5 +1,104 @@
 import { Reference, ReferenceType } from './types';
 
+export class TextPart {
+  type: 'plain-text' | 'complete-references' | 'incomplete-references';
+  text: string;
+
+  constructor(type: 'plain-text' | 'complete-references' | 'incomplete-references', text: string) {
+    this.type = type;
+    this.text = text;
+  }
+
+  static plainText(text: string): TextPart {
+    return new TextPart('plain-text', text);
+  }
+
+  static completeReferences(text: string): TextPart {
+    return new TextPart('complete-references', text);
+  }
+
+  static incompleteReferences(text: string): TextPart {
+    return new TextPart('incomplete-references', text);
+  }
+}
+
+/**
+ * 根据 <references> 和 </references> 标记将文本拆分成多个部分。
+ * 为了处理流式输出，如果只遇到了打开标记 <references>，没有对应的关闭标记 </references>，则认为 <references> 标记后面的所有内容都是引用的一部分。
+ * 
+ * 例如：
+ * 输入：
+ * "这是一段文本 <references>引用一</references> 后面还有文本。"
+ * 输出：
+ * ["这是一段文本", "<references>引用一</references>", "后面还有文本。"]
+ * 
+ * 输入：
+ * "这是一段文本 <references>引用一还没结束"
+ * 输出：
+ * ["这是一段文本", "<references>引用一还没结束"]
+ * 
+ * @param text 包含 <references> 标记的文本
+ * @returns 拆分后的文本数组
+ */
+export function splitTextByReferences(text: string): TextPart[] {
+  if (text.length === 0) {
+    return [];
+  }
+  
+  const result: TextPart[] = [];
+  let currentIndex = 0;
+  
+  // 查找所有 <references> 开始标记的位置
+  const openTagRegex = /<references>/g;
+  let match;
+  
+  while ((match = openTagRegex.exec(text)) !== null) {
+    const openTagStart = match.index;
+    
+    // 添加开始标记之前的文本（如果有的话）
+    if (openTagStart > currentIndex) {
+      const beforeText = text.substring(currentIndex, openTagStart);
+      if (beforeText) {
+        result.push(TextPart.plainText(beforeText));
+      }
+    }
+    
+    // 查找对应的关闭标记
+    const closeTagRegex = /<\/references>/g;
+    closeTagRegex.lastIndex = openTagStart + match[0].length;
+    const closeMatch = closeTagRegex.exec(text);
+    
+    if (closeMatch) {
+      // 找到了关闭标记，提取完整的 references 块
+      const closeTagEnd = closeMatch.index + closeMatch[0].length;
+      const referencesBlock = text.substring(openTagStart, closeTagEnd);
+      result.push(TextPart.completeReferences(referencesBlock));
+      currentIndex = closeTagEnd;
+    } else {
+      // 没有找到关闭标记，将剩余的所有文本都作为 references 块
+      const referencesBlock = text.substring(openTagStart);
+      result.push(TextPart.incompleteReferences(referencesBlock));
+      currentIndex = text.length;
+      break; // 已经处理到文本末尾
+    }
+  }
+  
+  // 添加最后剩余的文本（如果有的话）
+  if (currentIndex < text.length) {
+    const remainingText = text.substring(currentIndex);
+    if (remainingText) {
+      result.push(TextPart.plainText(remainingText));
+    }
+  }
+  
+  // 如果没有找到任何 references 标记，返回原始文本
+  if (result.length === 0) {
+    return [TextPart.plainText(text)];
+  }
+  
+  return result;
+}
+
 /**
  * 清理文本中的 <references> 标记。
  * 如果只遇到了打开标记 <references>，没有对应的关闭标记 </references>，则清理打开标记以后的所有内容。

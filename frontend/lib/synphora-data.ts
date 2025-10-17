@@ -5,6 +5,7 @@ import {
   ArtifactType,
   ChatMessage,
   MessageRole,
+  ReferenceType,
   ToolCallStatus,
 } from "./types";
 
@@ -102,7 +103,43 @@ const testInitialMessages: ChatMessage[] = [
             <artifactId>mindmap-1</artifactId>
             <title>思维导图</title>
           </reference>
-        </references>`,
+        </references>
+        你是否希望我继续讲解具体的代码实现？`,
+      },
+    ],
+  },
+  {
+    id: "5-variant",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "text",
+        text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。`,
+      },
+      {
+        type: "reference",
+        text: "",
+        references: [
+          {
+            type: ReferenceType.COURSE,
+            artifactId: "dynamic-programming-basics",
+            title: "动态规划基础",
+          },
+          {
+            type: ReferenceType.COURSE,
+            artifactId: "two-dimensional-dynamic-programming",
+            title: "二维动态规划的解法",
+          },
+          {
+            type: ReferenceType.MIND_MAP,
+            artifactId: "mindmap-1",
+            title: "思维导图",
+          },
+        ],
+      },
+      {
+        type: "text",
+        text: "你是否希望我继续讲解具体的代码实现？",
       },
     ],
   },
