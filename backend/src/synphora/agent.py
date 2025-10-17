@@ -18,6 +18,7 @@ from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType
 from synphora.prompt import AgentPrompts
 from synphora.reference import Reference, ReferenceType, parse_references
+from synphora.session_manager import session_manager
 from synphora.sse import (
     ArtifactListUpdatedEvent,
     RunFinishedEvent,
@@ -49,6 +50,7 @@ class NodeType(str, Enum):
 class AgentRequest(BaseModel):
     message: str
     model_key: str
+    session_id: str
 
 
 def generate_id() -> str:
@@ -180,7 +182,6 @@ class ActNode(ToolNode):
         self._send_tool_call_start_events(state)
         result = super().invoke(state, config)
         self._send_tool_call_end_events(state, result)
-
         return result
 
     async def ainvoke(self, state, config=None):
@@ -204,7 +205,7 @@ class ActNode(ToolNode):
                     tool_name=tool_call["name"],
                     attributes=attributes,
                 )
-                print(f'send tool call start event: {event}')
+                # print(f'send tool call start event: {event}')
                 write_sse_event(event)
 
     def _send_tool_call_end_events(self, state, result):
@@ -233,7 +234,7 @@ class ActNode(ToolNode):
                     tool_name=tool_call["name"],
                     attributes=attributes,
                 )
-                print(f'send tool call end event: {event}')
+                # print(f'send tool call end event: {event}')
                 write_sse_event(event)
 
     def _parse_attributes_from_string(self, data: str) -> dict:
@@ -325,23 +326,34 @@ async def generate_agent_response(
 
     print(f'generate_agent_response, request: {request}')
 
-    graph = build_agent_graph()
+    session_id = request.session_id
+    session, is_created = session_manager.get_or_create_session(session_id)
 
-    # 创建初始消息
+    messages = session.get_messages().copy()
     agent_prompts = AgentPrompts()
-    initial_messages = [
-        SystemMessage(content=agent_prompts.system()),
-        HumanMessage(content=agent_prompts.user(user_message=request.message)),
-    ]
+
+    # 如果是新会话，添加系统提示词
+    if is_created:
+        messages.append(SystemMessage(content=agent_prompts.system()))
+
+    # 添加用户消息
+    messages.append(
+        HumanMessage(content=agent_prompts.user(user_message=request.message))
+    )
+
+    graph = build_agent_graph()
 
     # 创建初始状态
     initial_state: AgentState = {
         "request": request,
-        "messages": initial_messages,
+        "messages": messages,
     }
 
     # 使用LangGraph的流式处理，订阅custom事件来获取SSE事件
-    async for kind, payload in graph.astream(initial_state, stream_mode=["custom"]):
+    final_state = None
+    async for kind, payload in graph.astream(
+        initial_state, stream_mode=["custom", "values"]
+    ):
         if kind == "custom":
             # 处理自定义事件（SSE事件）
             channel = payload.get("channel")
@@ -349,28 +361,48 @@ async def generate_agent_response(
                 event = payload.get("event")
                 if event:
                     yield event
+        elif kind == "values":
+            # 保存最终状态用于批量保存
+            final_state = payload
+
+    # agent 运行结束后，批量保存所有消息到会话
+    if final_state and "messages" in final_state:
+        session_manager.set_session_messages(
+            request.session_id, final_state["messages"]
+        )
 
 
 def run_agent(request: AgentRequest):
-    graph = build_agent_graph()
+    """命令行运行agent的函数"""
+    session_id = request.session_id
+    session, is_created = session_manager.get_or_create_session(session_id)
 
-    # 创建初始消息
+    messages = session.get_messages().copy()
     agent_prompts = AgentPrompts()
-    initial_messages = [
-        SystemMessage(content=agent_prompts.system()),
-        HumanMessage(content=agent_prompts.user(user_message=request.message)),
-    ]
+
+    # 如果是新会话，添加系统提示词
+    if is_created:
+        messages.append(SystemMessage(content=agent_prompts.system()))
+
+    # 添加用户消息
+    messages.append(
+        HumanMessage(content=agent_prompts.user(user_message=request.message))
+    )
+
+    graph = build_agent_graph()
 
     # 创建初始状态
     initial_state: AgentState = {
         "request": request,
-        "messages": initial_messages,
+        "messages": messages,
     }
 
     # 执行 agent，并打印 message 和 tool calls
+    final_state = None
     for event in graph.stream(initial_state):
         # 检查是否为 last node，如果是则跳过打印
         if NodeType.LAST in event:
+            final_state = event[NodeType.LAST]
             continue
 
         for value in event.values():
@@ -384,12 +416,47 @@ def run_agent(request: AgentRequest):
                 for tool_call in last_message.tool_calls:
                     print(f'🔧: ToolCall({tool_call["name"]}, {tool_call["args"]})')
 
+    # agent 运行结束后，批量保存所有消息到会话
+    if final_state and "messages" in final_state:
+        messages = final_state["messages"]
+        print('💾 save messages to session:')
+        for i, message in enumerate(messages):
+            if message.type in ('system', 'human', 'tool'):
+                content = message.content
+                if len(message.content) > 100:
+                    print(
+                        f'[{i}] {message.type}: {content[:80]} ...(omit {len(content) - 100} characters)... {content[-20:]}'
+                    )
+                else:
+                    print(f'[{i}] {message.type}: {content}')
+            else:
+                print(f'[{i}] {message.type}: {message.content}')
+        session_manager.set_session_messages(session_id, messages)
+
 
 def main():
-    request = AgentRequest(
-        message='编辑距离这道题怎么解？', model_key='deepseek/deepseek-chat'
-    )
-    run_agent(request)
+    """多轮对话示例"""
+    import uuid
+
+    model_key = 'deepseek/deepseek-chat'
+    session_id = str(uuid.uuid4())
+
+    user_messages = [
+        '编辑距离这道题怎么解？',
+        '继续',
+    ]
+
+    print("=" * 100)
+    for user_message in user_messages:
+        print(f'🧑: {user_message}')
+        run_agent(
+            AgentRequest(
+                message=user_message,
+                model_key=model_key,
+                session_id=session_id,
+            )
+        )
+        print("=" * 100)
 
 
 if __name__ == '__main__':

@@ -32,6 +32,7 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
+import { isShowDebugInfo } from "@/lib/env";
 import {
   parseReferences,
   splitTextByReferences
@@ -46,6 +47,11 @@ import {
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import React, { Fragment, useRef, useState } from "react";
+
+// 生成唯一的 session_id
+const generateSessionId = () => {
+  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
 
 const models = [
   {
@@ -86,6 +92,7 @@ export const Chatbot = ({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [status, setStatus] = useState<ChatStatus>("ready");
   const abortControllerRef = useRef<AbortController | null>(null);
+  const sessionIdRef = useRef<string>(generateSessionId());
 
   const addUserMessage = (text: string) => {
     const userMessage: ChatMessage = {
@@ -121,6 +128,7 @@ export const Chatbot = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          session_id: sessionIdRef.current,
           message: text,
           model_key: modelKey,
         }),
@@ -536,6 +544,12 @@ export const Chatbot = ({
       data-role="chatbot"
       className="w-full max-w-3xl min-h-0 flex-1 mx-auto flex flex-col"
     >
+      {isShowDebugInfo() && (
+        <div className="mb-4 flex justify-center">
+          <p className="text-xs text-gray-500">Session ID: {sessionIdRef.current}</p>
+        </div>
+      )}
+
       <Conversation className="flex-1 min-h-0">
         <ConversationContent>
           {messages.map((message) => renderMessage(message))}
