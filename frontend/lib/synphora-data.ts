@@ -59,7 +59,6 @@ const testInitialMessages: ChatMessage[] = [
           id: "tool-1",
           status: ToolCallStatus.COMPLETED,
           name: "查询文章列表",
-          arguments: {},
         },
       },
     ],
@@ -75,7 +74,6 @@ const testInitialMessages: ChatMessage[] = [
           id: "tool-2",
           status: ToolCallStatus.RUNNING,
           name: "查询文章内容",
-          arguments: {},
         },
       }
     ],
