@@ -1,6 +1,5 @@
-from .prompts import AgentPrompts, ArticleEvaluatorPrompts
+from .prompts import AgentPrompts
 
 __all__ = [
     "AgentPrompts",
-    "ArticleEvaluatorPrompts",
 ]
