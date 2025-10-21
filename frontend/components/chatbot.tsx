@@ -417,8 +417,13 @@ export const Chatbot = ({
       if (attributes) {
         toolCallDescription = attributes.title;
       }
-    } else if (toolCall.name === "generate_mind_map_artifact") {
+    } else if (toolCall.name === "generate_mind_map") {
       toolCallTitle = "生成思维导图";
+      if (attributes) {
+        toolCallDescription = attributes.title;
+      }
+    } else if (toolCall.name === "report_solution_code") {
+      toolCallTitle = "生成题解代码";
       if (attributes) {
         toolCallDescription = attributes.title;
       }

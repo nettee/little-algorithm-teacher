@@ -83,11 +83,12 @@ class ArtifactGrouper {
   private getArtifactGroup(artifact: ArtifactData): string {
     if (artifact.type === ArtifactType.PROBLEM) {
       return "原问题";
-    } else if (artifact.type === ArtifactType.CODE) {
+    } else if (artifact.type === ArtifactType.USER_CODE) {
       return "代码";
     } else if (
       artifact.type === ArtifactType.COURSE ||
       artifact.type === ArtifactType.MIND_MAP ||
+      artifact.type === ArtifactType.SOLUTION_CODE ||
       artifact.type === ArtifactType.EXPLANATION
     ) {
       return "讲解";
@@ -101,6 +102,8 @@ class ArtifactGrouper {
       return { text: "课程", color: "bg-green-100 text-green-700" };
     } else if (artifact.type === ArtifactType.MIND_MAP) {
       return { text: "思维导图", color: "bg-orange-100 text-orange-700" };
+    } else if (artifact.type === ArtifactType.SOLUTION_CODE) {
+      return { text: "代码", color: "bg-blue-100 text-blue-700" };
     } else {
       return { text: null, color: null };
     }

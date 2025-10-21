@@ -141,6 +141,33 @@ const testInitialMessages: ChatMessage[] = [
       },
     ],
   },
+  {
+    id: "user-2",
+    role: MessageRole.USER,
+    parts: [
+      {
+        type: "text",
+        text: "继续讲解代码实现",
+      },
+    ],
+  },
+  {
+    id: "solution-code-explanation",
+    role: MessageRole.ASSISTANT,
+    parts: [
+      {
+        type: "text",
+        text: `这是具体的题解代码，已为您生成。
+        <references>
+          <reference>
+            <type>SOLUTION_CODE</type>
+            <artifactId>solution-code-1</artifactId>
+            <title>题解代码</title>
+          </reference>
+        </references>`,
+      },
+    ],
+  },
 ];
 
 const testArtifacts: ArtifactData[] = [
@@ -154,8 +181,8 @@ const testArtifacts: ArtifactData[] = [
   {
     id: "code-1",
     role: MessageRole.USER,
-    type: ArtifactType.CODE,
-    title: "代码",
+    type: ArtifactType.USER_CODE,
+    title: "用户代码",
     content: "使用动态规划解决这个问题。",
   },
   {
@@ -204,6 +231,20 @@ markmap:
 + 二维子问题
 + 二维 DP 数组
 `,
+  },
+  {
+    id: "solution-code-1",
+    role: MessageRole.ASSISTANT,
+    type: ArtifactType.SOLUTION_CODE,
+    title: "题解代码",
+    content: `\`\`\`python
+def solution(nums, target):
+  for i in range(len(nums)):
+    for j in range(i + 1, len(nums)):
+      if nums[i] + nums[j] == target:
+        return [i, j]
+  return []
+\`\`\``,
   },
   {
     id: "explanation-1",

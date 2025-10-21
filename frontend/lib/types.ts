@@ -22,6 +22,7 @@ export interface ToolCall {
 export enum ReferenceType {
   COURSE = 'course',
   MIND_MAP = 'mind_map',
+  SOLUTION_CODE = 'solution_code',
 }
 
 export interface Reference {
@@ -52,7 +53,8 @@ export enum ArtifactStatus {
 
 export enum ArtifactType {
   PROBLEM = 'problem',
-  CODE = 'code',
+  USER_CODE = 'user_code',
+  SOLUTION_CODE = 'solution_code',
   COURSE = 'course',
   MIND_MAP = 'mind_map',
   EXPLANATION = 'explanation',

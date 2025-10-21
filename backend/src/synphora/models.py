@@ -8,6 +8,7 @@ class ArtifactType(str, Enum):
     COURSE = "course"
     MIND_MAP = "mind_map"
     EXPLANATION = "explanation"
+    SOLUTION_CODE = "solution_code"
     OTHER = "other"
 
 

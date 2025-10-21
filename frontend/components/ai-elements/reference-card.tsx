@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { BookOpenIcon, ChevronRightIcon, BrainIcon } from 'lucide-react';
+import { BookOpenIcon, ChevronRightIcon, BrainIcon, CodeXml } from 'lucide-react';
 import { type ComponentProps } from 'react';
 import { ReferenceType } from '@/lib/types';
 
@@ -17,6 +17,8 @@ const getReferenceIcon = (type: ReferenceType) => {
   switch (type) {
     case ReferenceType.MIND_MAP:
       return BrainIcon;
+    case ReferenceType.SOLUTION_CODE:
+      return CodeXml;
     case ReferenceType.COURSE:
     default:
       return BookOpenIcon;
@@ -27,6 +29,8 @@ const getReferenceColor = (type: ReferenceType) => {
   switch (type) {
     case ReferenceType.MIND_MAP:
       return 'group-hover:text-orange-600';
+    case ReferenceType.SOLUTION_CODE:
+      return 'group-hover:text-blue-600';
     case ReferenceType.COURSE:
       return 'group-hover:text-green-600';
     default:
@@ -43,6 +47,8 @@ const getReferenceDescription = (type: ReferenceType, description?: string) => {
       return "思维导图";
     case ReferenceType.COURSE:
       return "课程";
+    case ReferenceType.SOLUTION_CODE:
+      return "代码";
     default:
       return "";
   }

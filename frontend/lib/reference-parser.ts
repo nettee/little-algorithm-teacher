@@ -155,18 +155,7 @@ export function parseReferences(text: string): {
         if (typeMatch) {
           const type = typeMatch[1].trim();
           if (type) {
-            switch (type.toUpperCase()) {
-              case 'COURSE':
-                referenceType = ReferenceType.COURSE;
-                break;
-              case 'MIND_MAP':
-                referenceType = ReferenceType.MIND_MAP;
-                break;
-              default:
-                // 如果类型不匹配，使用默认类型或跳过
-                referenceType = ReferenceType.COURSE; // 默认为 COURSE 类型
-                break;
-            }
+            referenceType = ReferenceType[type.toUpperCase() as keyof typeof ReferenceType];
           }
         }
         

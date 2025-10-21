@@ -17,7 +17,8 @@ class AlgorithmTeacherTool:
         return [
             cls.list_articles,
             cls.read_article,
-            cls.generate_mind_map_artifact,
+            cls.generate_mind_map,
+            cls.report_solution_code,
         ]
 
     @staticmethod
@@ -51,7 +52,7 @@ class AlgorithmTeacherTool:
 
     @staticmethod
     @tool
-    def generate_mind_map_artifact(markdown_content: str) -> str:
+    def generate_mind_map(markdown_content: str) -> str:
         """
         根据 markdown_content 文本内容，生成思维导图 artifact。返回结果为 JSON 格式，包括 artifactId, title 等。
 
@@ -79,21 +80,46 @@ class AlgorithmTeacherTool:
 
         title = "解题思路"  # TODO parse
         content = markdown_content
-        try:
-            artifact = artifact_manager.create_artifact(
-                title=title,
-                content=content,
-                artifact_type=ArtifactType.MIND_MAP,
-                role=ArtifactRole.ASSISTANT,
-            )
 
-            data = {
-                "artifactId": artifact.id,
-                "title": artifact.title,
-            }
-            result = json.dumps(data, ensure_ascii=False)
-        except Exception as e:
-            print(f'generate_mind_map_artifact error: {e}')
-            e.print_exc()
+        artifact = artifact_manager.create_artifact(
+            title=title,
+            content=content,
+            artifact_type=ArtifactType.MIND_MAP,
+            role=ArtifactRole.ASSISTANT,
+        )
+
+        data = {
+            "artifactId": artifact.id,
+            "title": artifact.title,
+        }
+        result = json.dumps(data, ensure_ascii=False)
         print(f'generate_mind_map_artifact end, result: {result}')
+        return result
+
+    @staticmethod
+    @tool
+    def report_solution_code(content: str) -> str:
+        """
+        上报题解代码内容。
+
+        返回结果为 JSON 格式，为生成 artifact 的元信息，包括 artifactId, title 等。
+        """
+
+        print(f'report_solution_code start, text: {len(content)} characters')
+
+        title = "题解代码"
+
+        artifact = artifact_manager.create_artifact(
+            title=title,
+            content=content,
+            artifact_type=ArtifactType.SOLUTION_CODE,
+            role=ArtifactRole.ASSISTANT,
+        )
+
+        data = {
+            "artifactId": artifact.id,
+            "title": artifact.title,
+        }
+        result = json.dumps(data, ensure_ascii=False)
+        print(f'report_solution_code end, result: {result}')
         return result
