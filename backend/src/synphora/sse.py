@@ -2,8 +2,6 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from synphora.models import ArtifactData
-
 
 class EventType(Enum):
     RUN_STARTED = "RUN_STARTED"
@@ -58,42 +56,13 @@ class TextMessageEvent(SseEvent):
         return cls(data=TextMessageData(message_id=message_id, content=content))
 
 
-class ArtifactListUpdatedData(BaseModel):
-    artifact_id: str
-    title: str
-    artifact_type: str
-    role: str
-
-
 class ArtifactListUpdatedEvent(SseEvent):
-    data: ArtifactListUpdatedData
-
     def __init__(self, **kwargs):
         super().__init__(type=EventType.ARTIFACT_LIST_UPDATED, **kwargs)
 
     @classmethod
-    def new(
-        cls, artifact_id: str, title: str, artifact_type: str, role: str
-    ) -> "ArtifactListUpdatedEvent":
-        return cls(
-            data=ArtifactListUpdatedData(
-                artifact_id=artifact_id,
-                title=title,
-                artifact_type=artifact_type,
-                role=role,
-            )
-        )
-
-    @classmethod
-    def from_artifact(cls, artifact: ArtifactData) -> "ArtifactListUpdatedEvent":
-        return cls(
-            data=ArtifactListUpdatedData(
-                artifact_id=artifact.id,
-                title=artifact.title,
-                artifact_type=artifact.type.value,
-                role=artifact.role.value,
-            )
-        )
+    def new(cls) -> "ArtifactListUpdatedEvent":
+        return cls()
 
 
 class ArtifactContentStartData(BaseModel):

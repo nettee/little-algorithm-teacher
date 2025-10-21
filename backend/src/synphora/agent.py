@@ -86,7 +86,7 @@ def process_references(references: list[Reference]):
             title = course.title
             content = course_manager.read_course_content(artifact_id)
 
-            artifact = artifact_manager.create_artifact_with_id(
+            artifact_manager.create_artifact_with_id(
                 artifact_id=artifact_id,
                 title=title,
                 content=content,
@@ -94,12 +94,9 @@ def process_references(references: list[Reference]):
                 role=ArtifactRole.ASSISTANT,
             )
 
-        elif reference.type == ReferenceType.MIND_MAP:
-            # 无需处理，因为在 tool 中已经创建了 artifact
-            pass
+        # 其他类型的 reference 无需处理，因为在 tool 中已经创建了 artifact
 
-        # TODO only update once for all references
-        write_sse_event(ArtifactListUpdatedEvent.from_artifact(artifact))
+        write_sse_event(ArtifactListUpdatedEvent.new())
 
 
 def reason_node(state: AgentState) -> AgentState:

@@ -4,7 +4,9 @@ from langchain_core.tools import Tool, tool
 
 from synphora.artifact_manager import artifact_manager
 from synphora.course import CourseManager
+from synphora.langgraph_sse import write_sse_event
 from synphora.models import ArtifactRole, ArtifactType
+from synphora.sse import ArtifactListUpdatedEvent
 
 
 class AlgorithmTeacherTool:
@@ -87,6 +89,7 @@ class AlgorithmTeacherTool:
             artifact_type=ArtifactType.MIND_MAP,
             role=ArtifactRole.ASSISTANT,
         )
+        write_sse_event(ArtifactListUpdatedEvent.new())
 
         data = {
             "artifactId": artifact.id,
@@ -98,16 +101,24 @@ class AlgorithmTeacherTool:
 
     @staticmethod
     @tool
-    def report_solution_code(content: str) -> str:
+    def report_solution_code(markdown_content: str) -> str:
         """
-        上报题解代码内容。
+        上报题解代码内容。需要使用 Markdown 格式。用代码块包裹。示例：
+        ```python
+        def solution(nums, target):
+            for i in range(len(nums)):
+                for j in range(i + 1, len(nums)):
+                    if nums[i] + nums[j] == target:
+                        return [i, j]
+        ```
 
         返回结果为 JSON 格式，为生成 artifact 的元信息，包括 artifactId, title 等。
         """
 
-        print(f'report_solution_code start, text: {len(content)} characters')
+        print(f'report_solution_code start, text: {len(markdown_content)} characters')
 
         title = "题解代码"
+        content = markdown_content
 
         artifact = artifact_manager.create_artifact(
             title=title,
@@ -115,6 +126,7 @@ class AlgorithmTeacherTool:
             artifact_type=ArtifactType.SOLUTION_CODE,
             role=ArtifactRole.ASSISTANT,
         )
+        write_sse_event(ArtifactListUpdatedEvent.new())
 
         data = {
             "artifactId": artifact.id,
