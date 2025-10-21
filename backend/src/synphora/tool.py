@@ -35,11 +35,6 @@ class AlgorithmTeacherTool:
         result = json.dumps(data, ensure_ascii=False)
         # print(f'list_articles, result: {result}')
 
-        # TODO mock
-        import time
-
-        time.sleep(1)
-
         return result
 
     @staticmethod
@@ -52,43 +47,38 @@ class AlgorithmTeacherTool:
         content = AlgorithmTeacherTool.COURSE_MANAGER.read_course_content(artifact_id)
         # print(f'read_article, artifact_id: {artifact_id}, content: {content[:100]}')
 
-        # TODO mock
-        import time
-
-        time.sleep(2)
-
         return content
 
     @staticmethod
     @tool
-    def generate_mind_map_artifact(text: str) -> str:
+    def generate_mind_map_artifact(markdown_content: str) -> str:
         """
-        根据 text 文本内容，生成思维导图 artifact。返回结果为 JSON 格式，包括 artifactId, title 等。
+        根据 markdown_content 文本内容，生成思维导图 artifact。返回结果为 JSON 格式，包括 artifactId, title 等。
+
+        markdown_content 使用 Markdown 格式的 h1, h2, ul 表示思维导图的标题、一级分支、二级分支。示例内容如下：
+        ```markdown
+        # 动态规划解题思路
+
+        ## 解题四步骤
+
+        + 定义子问题
+        + 写出子问题的递推关系
+        + 确定 DP 数组的计算顺序
+        + 空间优化（可选）
+
+        ## 二维动态规划
+
+        + 二维子问题
+        + 二维 DP 数组
+        ```
         """
 
-        print(f'generate_mind_map_artifact start, text: {len(text)} characters')
+        print(
+            f'generate_mind_map_artifact start, text: {len(markdown_content)} characters'
+        )
 
-        # TODO mock
-        import time
-
-        time.sleep(6)
-
-        title = "动态规划解题思路"
-        content = """
-# 动态规划
-
-## 解题四步骤
-
-+ 定义子问题
-+ 写出子问题的递推关系
-+ 确定 DP 数组的计算顺序
-+ 空间优化（可选）
-
-## 二维动态规划
-
-+ 二维子问题
-+ 二维 DP 数组
-"""
+        title = "解题思路"  # TODO parse
+        content = markdown_content
         try:
             artifact = artifact_manager.create_artifact(
                 title=title,

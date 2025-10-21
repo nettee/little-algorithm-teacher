@@ -550,7 +550,7 @@ export const Chatbot = ({
         </div>
       )}
 
-      <Conversation className="flex-1 min-h-0">
+      <Conversation data-role="conversation" className="flex-1 min-h-0">
         <ConversationContent>
           {messages.map((message) => renderMessage(message))}
           {status === "submitted" && <Loader />}
