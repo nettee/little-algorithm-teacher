@@ -1,10 +1,23 @@
 // 定义消息类型
 export interface MessagePart {
-  type: 'text' | 'reasoning' | 'source-url' | 'reference' | 'tool';
+  type: 'text' | 'reasoning' | 'source-url' | 'reference' | 'tool' | 'citation';
   text: string;
   url?: string;
   references?: Reference[];
   toolCall?: ToolCall;
+  citation?: Citation;
+}
+
+export enum CitationType {
+  COURSE = 'course',
+  MIND_MAP = 'mind_map',
+  SOLUTION_CODE = 'solution_code',
+}
+
+export interface Citation {
+  type: CitationType;
+  artifactId: string;
+  title: string;
 }
 
 export enum ToolCallStatus {

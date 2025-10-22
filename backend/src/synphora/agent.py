@@ -12,12 +12,13 @@ from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
 from synphora.artifact_manager import artifact_manager
+from synphora.citation import Citation, CitationParser, CitationType
 from synphora.course import CourseManager
 from synphora.langgraph_sse import write_sse_event
 from synphora.llm import create_llm_client
 from synphora.models import ArtifactRole, ArtifactType
 from synphora.prompt import AgentPrompts
-from synphora.reference import Reference, ReferenceType, parse_references
+from synphora.reference import Reference, ReferenceType
 from synphora.session_manager import session_manager
 from synphora.sse import (
     ArtifactListUpdatedEvent,
@@ -99,6 +100,32 @@ def process_references(references: list[Reference]):
         write_sse_event(ArtifactListUpdatedEvent.new())
 
 
+def process_citations(citations: list[Citation]):
+    print(f'process citations: {citations}')
+    artifacts_updated = False
+    for citation in citations:
+        artifact_id = citation.artifactId
+
+        if citation.type == CitationType.COURSE:
+            course_manager = CourseManager()
+            course = course_manager.get_course(artifact_id)
+            title = course.title
+            content = course_manager.read_course_content(artifact_id)
+
+            artifact_manager.create_artifact_with_id(
+                artifact_id=artifact_id,
+                title=title,
+                content=content,
+                artifact_type=ArtifactType.COURSE,
+                role=ArtifactRole.ASSISTANT,
+            )
+
+            artifacts_updated = True
+
+    if artifacts_updated:
+        write_sse_event(ArtifactListUpdatedEvent.new())
+
+
 def reason_node(state: AgentState) -> AgentState:
     """推理节点：使用LLM决定调用哪个工具"""
     # print(f'reason_node, tools: {[t.name for t in tools]}')
@@ -124,9 +151,10 @@ def reason_node(state: AgentState) -> AgentState:
 
     ai_message = merge_chunks(accumulated_chunks)
 
-    references = parse_references(ai_message.content)
-    if references:
-        process_references(references)
+    citation_parser = CitationParser(ai_message.content)
+    citations = citation_parser.parse_citations()
+    if citations:
+        process_citations(citations)
 
     return {"messages": [ai_message]}
 
@@ -416,18 +444,18 @@ def run_agent(request: AgentRequest):
     # agent 运行结束后，批量保存所有消息到会话
     if final_state and "messages" in final_state:
         messages = final_state["messages"]
-        print('💾 save messages to session:')
-        for i, message in enumerate(messages):
-            if message.type in ('system', 'human', 'tool'):
-                content = message.content
-                if len(message.content) > 100:
-                    print(
-                        f'[{i}] {message.type}: {content[:80]} ...(omit {len(content) - 100} characters)... {content[-20:]}'
-                    )
-                else:
-                    print(f'[{i}] {message.type}: {content}')
-            else:
-                print(f'[{i}] {message.type}: {message.content}')
+        # print('💾 save messages to session:')
+        # for i, message in enumerate(messages):
+        #     if message.type in ('system', 'human', 'tool'):
+        #         content = message.content
+        #         if len(message.content) > 100:
+        #             print(
+        #                 f'[{i}] {message.type}: {content[:80]} ...(omit {len(content) - 100} characters)... {content[-20:]}'
+        #             )
+        #         else:
+        #             print(f'[{i}] {message.type}: {content}')
+        #     else:
+        #         print(f'[{i}] {message.type}: {message.content}')
         session_manager.set_session_messages(session_id, messages)
 
 
@@ -440,7 +468,7 @@ def main():
 
     user_messages = [
         '编辑距离这道题怎么解？',
-        '继续',
+        # '继续',
     ]
 
     print("=" * 100)

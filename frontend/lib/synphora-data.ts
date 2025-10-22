@@ -4,6 +4,7 @@ import {
   ArtifactStatus,
   ArtifactType,
   ChatMessage,
+  CitationType,
   MessageRole,
   ReferenceType,
   ToolCallStatus,
@@ -43,6 +44,10 @@ const testInitialMessages: ChatMessage[] = [
     role: MessageRole.ASSISTANT,
     parts: [
       {
+        type: "reasoning",
+        text: "嗯。用户问我动态规划怎么解。"
+      },
+      {
         type: "text",
         text: "让我查找一些相关文章",
       },
@@ -79,65 +84,38 @@ const testInitialMessages: ChatMessage[] = [
     ],
   },
   {
-    id: "5",
+    id: "with-citations",
     role: MessageRole.ASSISTANT,
     parts: [
       {
         type: "text",
-        text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。
-        <references>
-          <reference>
-            <type>COURSE</type>
-            <artifactId>dynamic-programming-basics</artifactId>
-            <title>动态规划基础</title>
-          </reference>
-          <reference>
-            <type>COURSE</type>
-            <artifactId>two-dimensional-dynamic-programming</artifactId>
-            <title>二维动态规划的解法</title>
-          </reference>
-          <reference>
-            <type>MIND_MAP</type>
-            <artifactId>mindmap-1</artifactId>
-            <title>思维导图</title>
-          </reference>
-        </references>
-        你是否希望我继续讲解具体的代码实现？`,
+        text: `## 动态规划基础
+
+首先，让我们回顾一下动态规划的基本解题框架。根据[14 打家劫舍：动态规划的解题四步骤](COURSE:14-dynamic-programming-basics)，动态规划问题的解题分为四个步骤：
+
+1. **定义子问题** - 将原问题分解为规模较小的相似问题
+2. **写出子问题的递推关系** - 找出子问题之间的数学关系
+3. **确定 DP 数组的计算顺序** - 确保计算每个子问题时，其依赖的子问题已经计算完成
+4. **空间优化（可选）** - 降低空间复杂度
+
+## 二维动态规划思路
+
+编辑距离问题属于二维动态规划问题，与最长公共子序列（LCS）问题类似。根据[15 最长公共子序列：二维动态规划的解法](COURSE:15-two-dimensional-dynamic-programming)，二维动态规划的核心思想是：
+
+- 子问题有两个参数，对应两个维度
+- DP 数组是二维的，每个元素对应一个子问题
+- 需要确定正确的计算顺序，确保依赖关系得到满足
+`,
       },
     ],
   },
   {
-    id: "5-variant",
+    id: "with-mind-map",
     role: MessageRole.ASSISTANT,
     parts: [
       {
         type: "text",
-        text: `这里有两篇关于动态规划的例子，你可以参考这两篇文档来学习基础知识。`,
-      },
-      {
-        type: "reference",
-        text: "",
-        references: [
-          {
-            type: ReferenceType.COURSE,
-            artifactId: "dynamic-programming-basics",
-            title: "动态规划基础",
-          },
-          {
-            type: ReferenceType.COURSE,
-            artifactId: "two-dimensional-dynamic-programming",
-            title: "二维动态规划的解法",
-          },
-          {
-            type: ReferenceType.MIND_MAP,
-            artifactId: "mindmap-1",
-            title: "思维导图",
-          },
-        ],
-      },
-      {
-        type: "text",
-        text: "你是否希望我继续讲解具体的代码实现？",
+        text: "这是为你生成的[思维导图](MIND_MAP:mindmap-1)，你可以参考这个思维导图来学习动态规划。",
       },
     ],
   },
@@ -157,14 +135,7 @@ const testInitialMessages: ChatMessage[] = [
     parts: [
       {
         type: "text",
-        text: `这是具体的题解代码，已为您生成。
-        <references>
-          <reference>
-            <type>SOLUTION_CODE</type>
-            <artifactId>solution-code-1</artifactId>
-            <title>题解代码</title>
-          </reference>
-        </references>`,
+        text: `这是具体的题解代码，已为您生成：[题解代码](SOLUTION_CODE:solution-code-1)`,
       },
     ],
   },

@@ -1,11 +1,9 @@
-import { Action, Actions } from "@/components/ai-elements/actions";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Loader } from "@/components/ai-elements/loader";
-import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputModelSelect,
@@ -18,35 +16,16 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from "@/components/ai-elements/reasoning";
-import { ReferenceCards } from "@/components/ai-elements/reference-card";
-import { Response } from "@/components/ai-elements/response";
-import { ToolCall } from "@/components/ai-elements/simple-tool";
-import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from "@/components/ai-elements/sources";
+import { renderMessage } from "@/components/message";
 import { isShowDebugInfo } from "@/lib/env";
-import {
-  parseReferences,
-  splitTextByReferences
-} from "@/lib/reference-parser";
 import {
   ChatMessage,
   ChatStatus,
-  MessagePart,
   MessageRole,
-  ToolCallStatus,
+  ToolCallStatus
 } from "@/lib/types";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { CopyIcon, RefreshCcwIcon } from "lucide-react";
-import React, { Fragment, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 
 // 生成唯一的 session_id
 const generateSessionId = () => {
@@ -349,201 +328,6 @@ export const Chatbot = ({
     }
   };
 
-  const renderMessageSource = (message: ChatMessage) => {
-    if (message.role !== MessageRole.ASSISTANT) {
-      return null;
-    }
-
-    const sourceParts = message.parts.filter(
-      (part) => part.type === "source-url"
-    );
-    if (sourceParts.length === 0) {
-      return null;
-    }
-
-    return (
-      <Sources>
-        <SourcesTrigger count={sourceParts.length} />
-        {sourceParts.map((part, i) => (
-          <SourcesContent key={`${message.id}-${i}`}>
-            <Source
-              key={`${message.id}-${i}`}
-              href={part.url}
-              title={part.url}
-            />
-          </SourcesContent>
-        ))}
-      </Sources>
-    );
-  };
-
-  const renderReference = (key: string, part: MessagePart) => {
-    const { references } = part;
-    if (!references) {
-      return null;
-    }
-    return (
-      <div key={key}>
-        <ReferenceCards
-          references={references}
-          onReferenceClick={(r) => {
-            if (onArtifactNavigate) {
-              onArtifactNavigate(r.artifactId);
-            }
-          }}
-        />
-      </div>
-    );
-  };
-
-  const renderToolCall = (key: string, part: MessagePart) => {
-    const { toolCall } = part;
-    if (!toolCall) {
-      return null;
-    }
-
-    const attributes = toolCall.attributes;
-
-    let toolCallTitle = toolCall.name;
-    let toolCallDescription = "";
-
-    if (toolCall.name === "list_articles") {
-      toolCallTitle = "查询文章";
-      if (attributes) {
-        toolCallDescription = attributes.tag;
-      }
-    } else if (toolCall.name === "read_article") {
-      toolCallTitle = "读取文章";
-      if (attributes) {
-        toolCallDescription = attributes.title;
-      }
-    } else if (toolCall.name === "generate_mind_map") {
-      toolCallTitle = "生成思维导图";
-      if (attributes) {
-        toolCallDescription = attributes.title;
-      }
-    } else if (toolCall.name === "report_solution_code") {
-      toolCallTitle = "生成题解代码";
-      if (attributes) {
-        toolCallDescription = attributes.title;
-      }
-    }
-
-    return (
-      <ToolCall
-        key={key}
-        status={toolCall.status}
-        title={toolCallTitle}
-        description={toolCallDescription}
-        className="mb-2"
-      />
-    );
-  };
-
-  const renderMessagePart = (
-    message: ChatMessage,
-    part: MessagePart,
-    i: number
-  ): React.ReactNode => {
-    const key = `${message.id}-${i}`;
-    const isLastMessage =
-      i === message.parts.length - 1 && message.id === messages.at(-1)?.id;
-    const isLastAssistantMessage =
-      message.role === MessageRole.ASSISTANT && isLastMessage;
-    const isStreaming = status === "streaming" && isLastMessage;
-
-    switch (part.type) {
-      case "text":
-        return (
-          <Fragment key={key}>
-            <Message from={message.role}>
-              <MessageContent>
-                <Response>{part.text}</Response>
-              </MessageContent>
-            </Message>
-            {isLastAssistantMessage && (
-              <Actions className="mt-2">
-                <Action onClick={() => regenerate()} label="Retry">
-                  <RefreshCcwIcon className="size-3" />
-                </Action>
-                <Action
-                  onClick={() => navigator.clipboard.writeText(part.text)}
-                  label="Copy"
-                >
-                  <CopyIcon className="size-3" />
-                </Action>
-              </Actions>
-            )}
-          </Fragment>
-        );
-      case "reasoning":
-        return (
-          <Reasoning key={key} className="w-full" isStreaming={isStreaming}>
-            <ReasoningTrigger />
-            <ReasoningContent>{part.text}</ReasoningContent>
-          </Reasoning>
-        );
-      case "reference":
-        return renderReference(key, part);
-      case "tool":
-        return renderToolCall(key, part);
-      default:
-        return null;
-    }
-  };
-
-  const transformMessagePart = (part: MessagePart): MessagePart[] => {
-    if (part.type !== "text") {
-      return [part];
-    }
-
-    if (part.text.includes("<references>")) {
-      const textParts = splitTextByReferences(part.text);
-      return textParts.map((textPart) => {
-        if (
-          textPart.type === "complete-references" ||
-          textPart.type === "incomplete-references"
-        ) {
-          return {
-            type: "reference",
-            text: "",
-            references: parseReferences(textPart.text).references,
-          };
-        } else {
-          return {
-            type: "text",
-            text: textPart.text,
-          };
-        }
-      });
-    } else {
-      return [part];
-    }
-  };
-
-  const transformMessage = (message: ChatMessage): ChatMessage => {
-    let resultParts: MessagePart[] = [];
-    for (const part of message.parts) {
-      resultParts.push(...transformMessagePart(part));
-    }
-    return {
-      ...message,
-      parts: resultParts,
-    };
-  };
-
-  const renderMessage = (message: ChatMessage) => {
-    const transformedMessage = transformMessage(message);
-    return (
-      <div key={transformedMessage.id}>
-        {renderMessageSource(transformedMessage)}
-        {transformedMessage.parts.map((part, i) =>
-          renderMessagePart(transformedMessage, part, i)
-        )}
-      </div>
-    );
-  };
-
   return (
     <div
       data-role="chatbot"
@@ -551,13 +335,15 @@ export const Chatbot = ({
     >
       {isShowDebugInfo() && (
         <div className="mb-4 flex justify-center">
-          <p className="text-xs text-gray-500">Session ID: {sessionIdRef.current}</p>
+          <p className="text-xs text-gray-500">
+            Session ID: {sessionIdRef.current}
+          </p>
         </div>
       )}
 
       <Conversation data-role="conversation" className="flex-1 min-h-0">
         <ConversationContent>
-          {messages.map((message) => renderMessage(message))}
+          {messages.map((message) => renderMessage(message, onArtifactNavigate))}
           {status === "submitted" && <Loader />}
         </ConversationContent>
         <ConversationScrollButton />
