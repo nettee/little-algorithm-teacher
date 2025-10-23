@@ -6,8 +6,8 @@ import {
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { Response } from "@/components/ai-elements/response";
-import { ToolCall } from "@/components/ai-elements/simple-tool";
 import { Citation } from "@/components/citation";
+import { ToolCall } from "@/components/tool-call";
 import { CitationParser } from "@/lib/citation-parser";
 import { ChatMessage, MessagePart } from "@/lib/types";
 

@@ -1,6 +1,3 @@
-import { isShowDebugInfo } from "@/lib/env";
-import { ArtifactData, ArtifactType } from "@/lib/types";
-import { Loader2, XIcon } from "lucide-react";
 import {
   Artifact,
   ArtifactAction,
@@ -9,9 +6,12 @@ import {
   ArtifactDescription,
   ArtifactHeader,
   ArtifactTitle,
-} from "./ai-elements/artifact";
-import Markdown from "./markdown";
-import MindMap from "./mindmap";
+} from "@/components/ai-elements/artifact";
+import Markdown from "@/components/markdown";
+import MindMap from "@/components/mindmap";
+import { isShowDebugInfo } from "@/lib/env";
+import { ArtifactData, ArtifactType } from "@/lib/types";
+import { Loader2, XIcon } from "lucide-react";
 
 // Artifact 详情组件
 export const ArtifactDetail = ({
