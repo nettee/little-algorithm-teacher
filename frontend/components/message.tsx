@@ -55,16 +55,13 @@ const renderToolCall = (key: string, part: MessagePart): React.ReactNode => {
   );
 };
 
-const renderReasoningPart = (
-  key: string,
-  part: MessagePart
-): React.ReactNode => {
+const ReasoningPartComponent = ({ part }: { part: MessagePart }) => {
   // TODO 需要判断 isStreaming
   // const isLastMessage = i === message.parts.length - 1 && message.id === messages.at(-1)?.id;
   // const isStreaming = status === "streaming" && isLastMessage;
 
   return (
-    <Reasoning key={key} className="w-full" isStreaming={false}>
+    <Reasoning className="w-full" isStreaming={false}>
       <ReasoningTrigger />
       <ReasoningContent>{part.text}</ReasoningContent>
     </Reasoning>
@@ -80,17 +77,6 @@ export const getMessageType = (message: ChatMessage): "normal" | "tool" => {
   return "normal";
 };
 
-export const renderToolMessage = (message: ChatMessage) => {
-  const toolParts = message.parts.filter((part) => part.type === "tool");
-  return (
-    <div key={message.id}>
-      {toolParts.map((part, i) => {
-        const key = `${message.id}-${i}`;
-        return renderToolCall(key, part);
-      })}
-    </div>
-  );
-};
 
 type MessagePartGroup = {
   type: "reasoning" | "normal";
@@ -142,18 +128,20 @@ const transformParts = (parts: MessagePart[]): MessagePart[] => {
   return result;
 };
 
-const renderNormalParts = (
-  key: string,
-  message: ChatMessage,
-  parts: MessagePart[]
-): React.ReactNode => {
+const NormalPartsComponent = ({
+  message,
+  parts,
+}: {
+  message: ChatMessage;
+  parts: MessagePart[];
+}) => {
   const { openArtifact } = useArtifactContext();
 
   return (
-    <Message data-role="message" key={key} from={message.role}>
+    <Message data-role="message" from={message.role}>
       <MessageContent>
         {parts.map((part, i) => {
-          const partKey = `${key}-${i}`;
+          const partKey = `${message.id}-${i}`;
           if (part.type === "citation") {
             return (
               <Citation
@@ -178,19 +166,21 @@ const renderNormalParts = (
   );
 };
 
-export const renderNormalMessage = (message: ChatMessage): React.ReactNode => {
+const NormalMessageComponent = ({ message }: { message: ChatMessage }) => {
   const partGroups = groupMessageParts(message);
   return (
-    <div key={message.id}>
+    <div>
       {partGroups.map((partGroup, i) => {
         const key = `${message.id}-${i}`;
         if (partGroup.type === "reasoning") {
-          return renderReasoningPart(key, partGroup.parts[0]);
+          return <ReasoningPartComponent key={key} part={partGroup.parts[0]} />;
         } else {
-          return renderNormalParts(
-            key,
-            message,
-            transformParts(partGroup.parts)
+          return (
+            <NormalPartsComponent
+              key={key}
+              message={message}
+              parts={transformParts(partGroup.parts)}
+            />
           );
         }
       })}
@@ -198,10 +188,22 @@ export const renderNormalMessage = (message: ChatMessage): React.ReactNode => {
   );
 };
 
-export const renderMessage = (message: ChatMessage): React.ReactNode => {
+const ToolMessageComponent = ({ message }: { message: ChatMessage }) => {
+  const toolParts = message.parts.filter((part) => part.type === "tool");
+  return (
+    <div>
+      {toolParts.map((part, i) => {
+        const key = `${message.id}-${i}`;
+        return renderToolCall(key, part);
+      })}
+    </div>
+  );
+};
+
+export const MessageComponent = ({ message }: { message: ChatMessage }) => {
   const messageType = getMessageType(message);
   if (messageType === "tool") {
-    return renderToolMessage(message);
+    return <ToolMessageComponent message={message} />;
   }
-  return renderNormalMessage(message);
+  return <NormalMessageComponent message={message} />;
 };

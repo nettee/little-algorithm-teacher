@@ -16,7 +16,7 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { renderMessage } from "@/components/message";
+import { MessageComponent } from "@/components/message";
 import { isShowDebugInfo } from "@/lib/env";
 import { getSynphoraInitialMessages } from "@/lib/synphora-data";
 import {
@@ -344,7 +344,9 @@ export const Chatbot = ({
 
       <Conversation data-role="conversation" className="flex-1 min-h-0">
         <ConversationContent>
-          {messages.map((message) => renderMessage(message))}
+          {messages.map((message) => (
+            <MessageComponent key={message.id} message={message} />
+          ))}
           {status === "submitted" && <Loader />}
         </ConversationContent>
         <ConversationScrollButton />
