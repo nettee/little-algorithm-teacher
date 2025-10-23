@@ -1,36 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 
 import { ArtifactDetail, ArtifactList } from "@/components/artifact";
 import { Chatbot } from "@/components/chatbot";
+import { ArtifactContext } from "@/app/artifact-context";
+import { fetchArtifacts } from "@/lib/api";
+import { isSynphoraPageTest } from "@/lib/env";
+import {
+  getSynphoraInitialArtifactStatus,
+  getSynphoraTestData,
+} from "@/lib/synphora-data";
 import {
   ArtifactData,
-  MessageRole,
-  ArtifactType,
   ArtifactStatus,
+  ArtifactType,
+  MessageRole,
 } from "@/lib/types";
-import { fetchArtifacts } from "@/lib/api";
-import { getSynphoraInitialData, getSynphoraTestData } from "@/lib/synphora-data";
-import { isSynphoraPageTest } from "@/lib/env";
 
 const useArtifacts = (
   initialStatus: ArtifactStatus,
   artifacts: ArtifactData[],
   initialArtifactId: string
 ) => {
-  const [artifactStatus, setArtifactStatus] = useState<ArtifactStatus>(initialStatus);
+  const [artifactStatus, setArtifactStatus] =
+    useState<ArtifactStatus>(initialStatus);
   const [currentArtifactId, setCurrentArtifactId] =
     useState<string>(initialArtifactId);
 
   const currentArtifact =
     artifacts.find((artifact) => artifact.id === currentArtifactId) ||
     artifacts[0];
-  
+
   console.log(`artifacts: ${artifacts}`);
-  console.log(`currentArtifactId: ${currentArtifactId}, currentArtifact: ${currentArtifact}`);
-    
+  console.log(
+    `currentArtifactId: ${currentArtifactId}, currentArtifact: ${currentArtifact}`
+  );
+
   const collapseArtifact = () => {
     setArtifactStatus(ArtifactStatus.COLLAPSED);
   };
@@ -55,14 +62,12 @@ const useArtifacts = (
 };
 
 const SynphoraPage = () => {
-  const { initialArtifactStatus, initialMessages } = getSynphoraInitialData();
+  const initialArtifactStatus = getSynphoraInitialArtifactStatus();
 
-  const {
-    data,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR("/artifacts", fetchArtifacts);
+  const { data, error, isLoading, mutate } = useSWR(
+    "/artifacts",
+    fetchArtifacts
+  );
 
   let artifactsData: ArtifactData[] = [];
   let initialArtifactId: string = "";
@@ -83,11 +88,7 @@ const SynphoraPage = () => {
     expandArtifact,
     hideArtifact,
     setCurrentArtifactId,
-  } = useArtifacts(
-    initialArtifactStatus,
-    artifactsData,
-    initialArtifactId,
-  );
+  } = useArtifacts(initialArtifactStatus, artifactsData, initialArtifactId);
 
   if (isLoading) {
     return (
@@ -185,14 +186,15 @@ const SynphoraPage = () => {
             artifactStatus === ArtifactStatus.EXPANDED ? "w-1/3" : "flex-1"
           }`}
         >
-          <Chatbot
-            initialMessages={initialMessages}
-            onArtifactContentStart={onArtifactContentStart}
-            onArtifactContentChunk={onArtifactContentChunk}
-            onArtifactContentComplete={onArtifactContentComplete}
-            onArtifactListUpdated={onArtifactListUpdated}
-            onArtifactNavigate={openArtifact}
-          />
+          <ArtifactContext.Provider value={{ openArtifact }}>
+            <Chatbot
+              onArtifactContentStart={onArtifactContentStart}
+              onArtifactContentChunk={onArtifactContentChunk}
+              onArtifactContentComplete={onArtifactContentComplete}
+              onArtifactListUpdated={onArtifactListUpdated}
+              onArtifactNavigate={openArtifact}
+            />
+          </ArtifactContext.Provider>
         </div>
         {artifactStatus !== ArtifactStatus.HIDDEN && (
           <div

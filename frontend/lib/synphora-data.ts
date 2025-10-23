@@ -157,7 +157,7 @@ const testArtifacts: ArtifactData[] = [
     content: "使用动态规划解决这个问题。",
   },
   {
-    id: "dynamic-programming-basics",
+    id: "14-dynamic-programming-basics",
     role: MessageRole.ASSISTANT,
     type: ArtifactType.COURSE,
     title: "动态规划基础",
@@ -169,7 +169,7 @@ const testArtifacts: ArtifactData[] = [
 - 空间优化（可选）`,
   },
   {
-    id: "two-dimensional-dynamic-programming",
+    id: "15-two-dimensional-dynamic-programming",
     role: MessageRole.ASSISTANT,
     type: ArtifactType.COURSE,
     title: "二维动态规划的解法",
@@ -226,21 +226,18 @@ def solution(nums, target):
   },
 ];
 
-export const getSynphoraInitialData = (): {
-  initialArtifactStatus: ArtifactStatus;
-  initialMessages: ChatMessage[];
-} => {
+export const getSynphoraInitialArtifactStatus = (): ArtifactStatus => {
   if (isSynphoraPageTest()) {
-    return {
-      initialArtifactStatus: ArtifactStatus.COLLAPSED,
-      initialMessages: testInitialMessages,
-    };
+    return ArtifactStatus.COLLAPSED;
   }
+  return ArtifactStatus.HIDDEN;
+};
 
-  return {
-    initialArtifactStatus: ArtifactStatus.HIDDEN,
-    initialMessages: initialMessages,
-  };
+export const getSynphoraInitialMessages = (): ChatMessage[] => {
+  if (isSynphoraPageTest()) {
+    return testInitialMessages;
+  }
+  return initialMessages;
 };
 
 export const getSynphoraTestData = (): {

@@ -1,3 +1,4 @@
+import { useArtifactContext } from "@/app/artifact-context";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   Reasoning,
@@ -144,22 +145,32 @@ const transformParts = (parts: MessagePart[]): MessagePart[] => {
 const renderNormalParts = (
   key: string,
   message: ChatMessage,
-  parts: MessagePart[],
-  onArtifactNavigate?: (artifactId: string) => void
+  parts: MessagePart[]
 ): React.ReactNode => {
+  const { openArtifact } = useArtifactContext();
+
   return (
     <Message data-role="message" key={key} from={message.role}>
       <MessageContent>
         {parts.map((part, i) => {
           const partKey = `${key}-${i}`;
           if (part.type === "citation") {
-            return <Citation data-role="message-citation" key={partKey} citation={part.citation} onClick={() => {
-              if (onArtifactNavigate) {
-                onArtifactNavigate(part.citation!.artifactId);
-              }
-            }} />;
+            return (
+              <Citation
+                data-role="message-citation"
+                key={partKey}
+                citation={part.citation}
+                onClick={() => {
+                  openArtifact(part.citation!.artifactId);
+                }}
+              />
+            );
           } else {
-            return <Response data-role="message-text" key={partKey}>{part.text}</Response>;
+            return (
+              <Response data-role="message-text" key={partKey}>
+                {part.text}
+              </Response>
+            );
           }
         })}
       </MessageContent>
@@ -167,7 +178,7 @@ const renderNormalParts = (
   );
 };
 
-export const renderNormalMessage = (message: ChatMessage, onArtifactNavigate?: (artifactId: string) => void): React.ReactNode => {
+export const renderNormalMessage = (message: ChatMessage): React.ReactNode => {
   const partGroups = groupMessageParts(message);
   return (
     <div key={message.id}>
@@ -176,17 +187,21 @@ export const renderNormalMessage = (message: ChatMessage, onArtifactNavigate?: (
         if (partGroup.type === "reasoning") {
           return renderReasoningPart(key, partGroup.parts[0]);
         } else {
-          return renderNormalParts(key, message, transformParts(partGroup.parts), onArtifactNavigate);
+          return renderNormalParts(
+            key,
+            message,
+            transformParts(partGroup.parts)
+          );
         }
       })}
     </div>
   );
 };
 
-export const renderMessage = (message: ChatMessage, onArtifactNavigate?: (artifactId: string) => void): React.ReactNode => {
+export const renderMessage = (message: ChatMessage): React.ReactNode => {
   const messageType = getMessageType(message);
   if (messageType === "tool") {
     return renderToolMessage(message);
   }
-  return renderNormalMessage(message, onArtifactNavigate);
+  return renderNormalMessage(message);
 };

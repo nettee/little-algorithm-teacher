@@ -18,6 +18,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { renderMessage } from "@/components/message";
 import { isShowDebugInfo } from "@/lib/env";
+import { getSynphoraInitialMessages } from "@/lib/synphora-data";
 import {
   ChatMessage,
   ChatStatus,
@@ -48,14 +49,12 @@ const models = [
 ];
 
 export const Chatbot = ({
-  initialMessages = [],
   onArtifactContentStart,
   onArtifactContentChunk,
   onArtifactContentComplete,
   onArtifactListUpdated,
   onArtifactNavigate,
 }: {
-  initialMessages: ChatMessage[];
   onArtifactContentStart: (
     artifactId: string,
     title: string,
@@ -66,6 +65,8 @@ export const Chatbot = ({
   onArtifactListUpdated: () => void;
   onArtifactNavigate?: (artifactId: string) => void;
 }) => {
+  const initialMessages = getSynphoraInitialMessages();
+
   const [input, setInput] = useState("");
   const [modelKey, setModelKey] = useState<string>(models[0].key);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -343,7 +344,7 @@ export const Chatbot = ({
 
       <Conversation data-role="conversation" className="flex-1 min-h-0">
         <ConversationContent>
-          {messages.map((message) => renderMessage(message, onArtifactNavigate))}
+          {messages.map((message) => renderMessage(message))}
           {status === "submitted" && <Loader />}
         </ConversationContent>
         <ConversationScrollButton />
