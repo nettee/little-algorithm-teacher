@@ -55,7 +55,7 @@ const renderToolCall = (key: string, part: MessagePart): React.ReactNode => {
   );
 };
 
-const ReasoningPartComponent = ({ part }: { part: MessagePart }) => {
+const MessageReasoningPart = ({ part }: { part: MessagePart }) => {
   // TODO 需要判断 isStreaming
   // const isLastMessage = i === message.parts.length - 1 && message.id === messages.at(-1)?.id;
   // const isStreaming = status === "streaming" && isLastMessage;
@@ -76,7 +76,6 @@ export const getMessageType = (message: ChatMessage): "normal" | "tool" => {
   }
   return "normal";
 };
-
 
 type MessagePartGroup = {
   type: "reasoning" | "normal";
@@ -128,7 +127,7 @@ const transformParts = (parts: MessagePart[]): MessagePart[] => {
   return result;
 };
 
-const NormalPartsComponent = ({
+const MessageNormalParts = ({
   message,
   parts,
 }: {
@@ -166,17 +165,17 @@ const NormalPartsComponent = ({
   );
 };
 
-const NormalMessageComponent = ({ message }: { message: ChatMessage }) => {
+const NormalMessage = ({ message }: { message: ChatMessage }) => {
   const partGroups = groupMessageParts(message);
   return (
     <div>
       {partGroups.map((partGroup, i) => {
         const key = `${message.id}-${i}`;
         if (partGroup.type === "reasoning") {
-          return <ReasoningPartComponent key={key} part={partGroup.parts[0]} />;
+          return <MessageReasoningPart key={key} part={partGroup.parts[0]} />;
         } else {
           return (
-            <NormalPartsComponent
+            <MessageNormalParts
               key={key}
               message={message}
               parts={transformParts(partGroup.parts)}
@@ -188,7 +187,7 @@ const NormalMessageComponent = ({ message }: { message: ChatMessage }) => {
   );
 };
 
-const ToolMessageComponent = ({ message }: { message: ChatMessage }) => {
+const ToolMessage = ({ message }: { message: ChatMessage }) => {
   const toolParts = message.parts.filter((part) => part.type === "tool");
   return (
     <div>
@@ -203,7 +202,7 @@ const ToolMessageComponent = ({ message }: { message: ChatMessage }) => {
 export const MessageComponent = ({ message }: { message: ChatMessage }) => {
   const messageType = getMessageType(message);
   if (messageType === "tool") {
-    return <ToolMessageComponent message={message} />;
+    return <ToolMessage message={message} />;
   }
-  return <NormalMessageComponent message={message} />;
+  return <NormalMessage message={message} />;
 };
