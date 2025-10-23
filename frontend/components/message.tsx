@@ -1,4 +1,3 @@
-import { Citation } from "@/components/ai-elements/citation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   Reasoning,
@@ -7,8 +6,9 @@ import {
 } from "@/components/ai-elements/reasoning";
 import { Response } from "@/components/ai-elements/response";
 import { ToolCall } from "@/components/ai-elements/simple-tool";
-import { ChatMessage, MessagePart } from "@/lib/types";
+import { Citation } from "@/components/citation";
 import { CitationParser } from "@/lib/citation-parser";
+import { ChatMessage, MessagePart } from "@/lib/types";
 
 const renderToolCall = (key: string, part: MessagePart): React.ReactNode => {
   const { toolCall } = part;

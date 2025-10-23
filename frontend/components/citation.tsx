@@ -1,16 +1,18 @@
-'use client';
+"use client";
 
-import { cn } from '@/lib/utils';
-import { BrainIcon, CodeXml, BookOpenIcon, LucideIcon } from 'lucide-react';
-import { type ComponentProps } from 'react';
-import { CitationType } from '@/lib/types';
+import { cn } from "@/lib/utils";
+import { BrainIcon, CodeXml, BookOpenIcon, LucideIcon } from "lucide-react";
+import { type ComponentProps } from "react";
+import { CitationType } from "@/lib/types";
+import { isShowDebugInfo } from "@/lib/env";
 
 export interface CitationData {
   type: CitationType;
   title: string;
+  artifactId: string;
 }
 
-export type CitationProps = ComponentProps<'div'> & {
+export type CitationProps = ComponentProps<"div"> & {
   citation?: CitationData;
 };
 
@@ -29,13 +31,13 @@ const getCitationIcon = (type: CitationType): LucideIcon => {
 const getCitationColor = (type: CitationType): string => {
   switch (type) {
     case CitationType.MIND_MAP:
-      return 'text-orange-600';
+      return "text-orange-600";
     case CitationType.SOLUTION_CODE:
-      return 'text-blue-600';
+      return "text-blue-600";
     case CitationType.COURSE:
-      return 'text-green-600';
+      return "text-green-600";
     default:
-      return 'text-primary';
+      return "text-primary";
   }
 };
 
@@ -71,9 +73,9 @@ export const Citation = ({
   return (
     <div
       className={cn(
-        'my-2 p-3 rounded-lg border border-gray-300 bg-gray-200 backdrop-blur-sm',
-        'hover:bg-gray-300 transition-colors duration-200',
-        'group cursor-pointer inline-block max-w-72',
+        "my-2 p-3 rounded-lg border border-gray-300 bg-gray-200 backdrop-blur-sm",
+        "hover:bg-gray-300 transition-colors duration-200",
+        "group cursor-pointer inline-block max-w-72",
         className
       )}
       onClick={onClick}
@@ -84,18 +86,23 @@ export const Citation = ({
         <div className="flex-shrink-0 p-2 rounded-md text-muted-foreground group-hover:text-foreground transition-colors">
           <IconComponent className={cn("h-5 w-5", color)} />
         </div>
-        
+
         {/* 内容区域 */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* 标题 */}
           <h4 className="font-medium text-sm text-foreground truncate mb-1">
             {citation.title}
           </h4>
-          
+
           {/* 类型 */}
           <span className="text-muted-foreground text-xs font-medium">
             {getCitationDescription(citation.type)}
           </span>
+
+          {/* artifactId 调试信息 */}
+          {isShowDebugInfo() && (
+            <span className="text-xs text-gray-500 mt-1">{citation.artifactId}</span>
+          )}
         </div>
       </div>
     </div>
